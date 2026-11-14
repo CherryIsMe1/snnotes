@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SNNOTES // SNAKE NATION NEURAL LOG</title>
+    <title>SNNOTES</title>
     <link rel="stylesheet" href="css/cyber-theme.css">
 </head>
 <body>
-    <!-- Retro-futuristic scanlines overlay -->
-    <div class="scanlines-overlay"></div>
+    <!-- Retro CRT Scanline Overlay -->
+    <div id="scanlines" class="scanlines-overlay"></div>
 
     <div id="appLayout">
         <!-- ================================================================
-             TOP DECK HUD BAR
+             TOP HUD BAR
              ================================================================ -->
         <header class="top-hud">
             <div class="hud-left">
@@ -20,33 +20,50 @@
                     <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
                     <span>SNNOTES</span>
                 </div>
-                <div class="hud-sublogo">SNAKE NATION // V1.0.0</div>
             </div>
 
             <div class="hud-center">
                 <div class="hud-alarm-ticker" id="hudAlarmTicker">
                     <span class="radar-dot"></span>
-                    <span id="alarmTickerText">CHRONO: SCANNING ALARMS...</span>
+                    <span id="alarmTickerText">NO ACTIVE ALARMS</span>
                 </div>
             </div>
 
             <div class="hud-right">
-                <button class="btn-hud active" id="btnToggleSound" title="Toggle Synthesizer SFX">
+                <!-- Theme selection matching SNDeck -->
+                <select class="btn-hud theme-select" id="themeSelect" aria-label="Select Theme">
+                    <option value="omi">SN</option>
+                    <option value="snd">ER</option>
+                    <option value="blossom">BLOSSOM</option>
+                    <option value="basic">BASIC</option>
+                </select>
+                <button class="btn-hud" id="btnCreateTheme" title="Create Custom Theme">+</button>
+                <button class="btn-hud active" id="btnToggleRetro" title="Toggle Scanline Filter">
+                    <span>RETRO: ON</span>
+                </button>
+                <button class="btn-hud active" id="btnToggleSound" title="Toggle Sound FX">
                     <span>SFX: ON</span>
                 </button>
+                <button class="btn-hud active" id="btnTypingSettings" title="Keystroke Typing Audio Settings">
+                    <span>TYPING: ON</span>
+                </button>
+                <button class="btn-hud" id="btnExportAll" title="Backup Library">
+                    <span>BACKUP</span>
+                </button>
+                <input type="file" id="inputImportBackup" accept=".json" style="display: none;">
                 <div class="hud-clock" id="hudClock">00:00:00</div>
             </div>
         </header>
 
         <!-- ================================================================
-             MAIN 3-COLUMN WORKSPACE
+             MAIN WORKSPACE
              ================================================================ -->
         <main class="main-workspace">
-            <!-- 1. LEFT SIDEBAR: DIRECTORY & FILTERS -->
+            <!-- 1. LEFT SIDEBAR -->
             <aside class="sidebar-left">
-                <button class="btn-cyber-primary cyber-cut-sm" id="btnNewShard">
+                <button class="btn-cyber-primary cyber-cut-sm" id="btnNewNote">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
-                    <span>NEW DATA SHARD</span>
+                    <span>+ ADD NOTE</span>
                 </button>
 
                 <div>
@@ -55,23 +72,23 @@
                     </div>
                     <div class="filter-list">
                         <div class="filter-item active" data-category="all">
-                            <span>ALL SHARDS</span>
+                            <span>ALL NOTES</span>
                             <span class="filter-count" id="countAll">0</span>
                         </div>
                         <div class="filter-item" data-category="pinned">
-                            <span>PINNED // STARRED</span>
+                            <span>PINNED</span>
                             <span class="filter-count" id="countPinned">0</span>
                         </div>
                         <div class="filter-item" data-category="urgent">
-                            <span>URGENT // HIGH</span>
+                            <span>URGENT</span>
                             <span class="filter-count" id="countUrgent">0</span>
                         </div>
                         <div class="filter-item" data-category="alarm">
-                            <span>ACTIVE ALARMS</span>
+                            <span>ALARMS</span>
                             <span class="filter-count" id="countAlarms">0</span>
                         </div>
                         <div class="filter-item" data-category="completed">
-                            <span>ARCHIVED // DONE</span>
+                            <span>COMPLETED</span>
                             <span class="filter-count" id="countCompleted">0</span>
                         </div>
                     </div>
@@ -92,38 +109,39 @@
                 <div>
                     <div class="sidebar-section-title">
                         <span>TAGS</span>
-                        <span id="btnAddCustomTag" style="cursor: pointer; font-size: 14px;" title="Add custom tag">+</span>
+                        <span id="btnAddCustomTag" style="cursor: pointer; font-size: 14px;" title="Add Tag">+</span>
                     </div>
-                    <div class="tags-cloud" id="tagsCloud">
-                        <!-- Populated by JS -->
-                    </div>
+                    <div class="tags-cloud" id="tagsCloud"></div>
                 </div>
             </aside>
 
-            <!-- 2. CENTER PANEL: SHARD EDITOR & ALARM MODULE -->
+            <!-- 2. CENTER PANEL: NOTE & CHECKLIST EDITOR -->
             <section class="editor-center">
                 <div class="editor-header-bar">
-                    <div class="editor-mode-indicator" id="editorStatus">READY // LOCAL STORAGE SYNCED</div>
+                    <div class="editor-mode-indicator" id="editorStatus">READY</div>
                     <div class="editor-actions">
-                        <button class="btn-editor-action" id="btnTogglePin" title="Pin note to top">
+                        <button class="btn-editor-action" id="btnTogglePin" title="Pin note">
                             <span id="pinIcon">☆</span> PIN
                         </button>
-                        <button class="btn-editor-action" id="btnToggleView" title="Toggle Markdown Preview">
+                        <button class="btn-editor-action active" id="btnToggleChecklist" title="Show / Hide Checklist">
+                            <span>☑</span> TASKS
+                        </button>
+                        <button class="btn-editor-action" id="btnToggleView" title="Toggle Preview">
                             <span id="viewModeIcon">👁</span> PREVIEW
                         </button>
                         <button class="btn-editor-action" id="btnExportMd" title="Export as Markdown">
                             <span>⬇</span> EXPORT
                         </button>
-                        <button class="btn-editor-action btn-editor-delete" id="btnDeleteShard" title="Delete this note">
+                        <button class="btn-editor-action btn-editor-delete" id="btnDeleteNote" title="Delete note">
                             <span>✕</span> DELETE
                         </button>
                     </div>
                 </div>
 
                 <!-- Title Input -->
-                <input type="text" class="shard-title-input" id="inputShardTitle" placeholder="SHARD_TITLE // ENTER IDENTIFIER..." spellcheck="false">
+                <input type="text" class="shard-title-input" id="inputNoteTitle" placeholder="Note Title..." spellcheck="false">
 
-                <!-- Metadata Row (Priority, Tags) -->
+                <!-- Meta Bar -->
                 <div class="shard-meta-bar cyber-cut-sm">
                     <div class="meta-group">
                         <span class="meta-label">PRIORITY:</span>
@@ -136,119 +154,221 @@
 
                     <div class="meta-group">
                         <span class="meta-label">TAG:</span>
-                        <select class="alarm-input" id="selectShardTag">
-                            <!-- Populated by JS -->
-                        </select>
+                        <select class="alarm-input" id="selectNoteTag"></select>
                     </div>
 
                     <div class="meta-group" style="margin-left: auto;">
                         <label class="alarm-toggle-switch">
                             <input type="checkbox" id="chkEnableAlarm">
-                            <span style="color: var(--omi-purple); font-weight: bold;">ENABLE ALARM</span>
+                            <span style="color: var(--omi-purple); font-weight: bold;">ALARM</span>
                         </label>
                     </div>
                 </div>
 
-                <!-- Alarm Configuration Drawer (Collapsible) -->
+                <!-- Alarm Drawer -->
                 <div class="alarm-config-module cyber-cut-sm" id="alarmConfigModule" style="display: none;">
                     <div class="alarm-config-header">
                         <span class="alarm-config-title">
                             <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
-                            CHRONO ALARM TRIGGER PARAMETERS
+                            ALARM SETTINGS
                         </span>
                         <span id="alarmTimeDisplay" style="font-family: var(--font-mono); font-size: 11px; color: var(--omi-yellow);"></span>
                     </div>
                     <div class="alarm-fields-row">
                         <div>
-                            <span class="meta-label">DATE & TIME: </span>
+                            <span class="meta-label">TIME: </span>
                             <input type="datetime-local" class="alarm-input" id="inputAlarmDatetime">
                         </div>
                         <div>
                             <span class="meta-label">SOUND: </span>
                             <select class="alarm-input" id="selectAlarmSound">
-                                <option value="siren">CYBER SIREN</option>
-                                <option value="pulse">TACTICAL PULSE</option>
-                                <option value="ping">SONAR PING</option>
-                                <option value="cyber">PITCH SWEEP</option>
+                                <option value="siren">SIREN</option>
+                                <option value="pulse">PULSE</option>
+                                <option value="ping">PING</option>
                             </select>
                         </div>
                         <div>
                             <span class="meta-label">REPEAT: </span>
                             <select class="alarm-input" id="selectAlarmRepeat">
-                                <option value="none">NONE (ONCE)</option>
+                                <option value="none">ONCE</option>
                                 <option value="daily">DAILY</option>
-                                <option value="workdays">WORKDAYS</option>
                                 <option value="weekly">WEEKLY</option>
                             </select>
                         </div>
                     </div>
                 </div>
 
-                <!-- Content Area -->
+                <!-- Interactive Checklist Container -->
+                <div class="checklist-container cyber-cut-sm" id="checklistContainer">
+                    <div class="checklist-header">
+                        <span class="checklist-title">TASKS & CHECKLIST</span>
+                        <div class="checklist-progress-wrap">
+                            <div class="checklist-progress-bar">
+                                <div class="checklist-progress-fill" id="checklistProgressFill"></div>
+                            </div>
+                            <span class="checklist-progress-text" id="checklistProgressText">0/0 (0%)</span>
+                        </div>
+                    </div>
+                    <div class="checklist-items-list" id="checklistItemsList"></div>
+                    <div class="checklist-add-row">
+                        <input type="text" class="checklist-input cyber-cut-sm" id="inputNewTask" placeholder="Add a new task and press Enter..." spellcheck="false">
+                        <button class="btn-checklist-add cyber-cut-sm" id="btnAddTask">＋ ADD</button>
+                    </div>
+                </div>
+
+                <!-- Text Note & Markdown Content Area -->
                 <div class="content-wrapper">
-                    <textarea class="shard-content-textarea cyber-cut-sm" id="inputShardContent" placeholder="Enter note briefing, markdown or checklist tasks (e.g. - [ ] item)..." spellcheck="false"></textarea>
-                    <div class="shard-markdown-preview cyber-cut-sm" id="shardMarkdownPreview"></div>
+                    <textarea class="shard-content-textarea cyber-cut-sm" id="inputNoteContent" placeholder="Write your notes here..." spellcheck="false"></textarea>
+                    <div class="shard-markdown-preview cyber-cut-sm" id="noteMarkdownPreview"></div>
                 </div>
 
                 <!-- Footer Status -->
                 <div class="editor-footer">
                     <span id="charCount">0 CHARACTERS // 0 WORDS</span>
-                    <span id="saveStatus">AUTO-SAVED</span>
+                    <span id="saveStatus">SAVED</span>
                 </div>
             </section>
 
-            <!-- 3. RIGHT PANEL: NEURAL SHARDS DIRECTORY / CARDS -->
+            <!-- 3. RIGHT PANEL: NOTES DIRECTORY -->
             <aside class="sidebar-right">
                 <div class="directory-header">
                     <div class="search-box">
                         <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                        <input type="text" class="search-input cyber-cut-sm" id="inputSearch" placeholder="SEARCH SHARDS OR #TAG...">
+                        <input type="text" class="search-input cyber-cut-sm" id="inputSearch" placeholder="Search notes or #tag...">
                     </div>
                     <div class="sort-row">
-                        <span>SORT BY:</span>
+                        <span>SORT:</span>
                         <select class="sort-select" id="selectSort">
                             <option value="updated-desc">RECENTLY UPDATED</option>
                             <option value="alarm-asc">NEXT ALARM</option>
-                            <option value="priority-desc">HIGHEST PRIORITY</option>
-                            <option value="created-desc">CREATION DATE</option>
+                            <option value="priority-desc">PRIORITY</option>
+                            <option value="created-desc">DATE ADDED</option>
                             <option value="title-asc">NAME (A-Z)</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="shards-scroll-list" id="shardsList">
-                    <!-- Populated by JS -->
-                </div>
+                <div class="shards-scroll-list" id="notesList"></div>
             </aside>
         </main>
     </div>
 
     <!-- ====================================================================
-         FULLSCREEN EMERGENCY ALARM ALERT HUD MODAL
+         TYPING SOUND SETTINGS MODAL
+         ==================================================================== -->
+    <div class="modal-overlay" id="modalTypingSettings">
+        <div class="modal-box cyber-cut">
+            <div class="modal-title">
+                <span>KEYSTROKE TYPING AUDIO</span>
+                <button class="modal-close-btn" id="btnCloseTypingModal">✕</button>
+            </div>
+
+            <div class="setting-row">
+                <div class="setting-control-group">
+                    <label class="alarm-toggle-switch" style="font-size: 13px;">
+                        <input type="checkbox" id="chkTypingEnabled" checked>
+                        <span style="color: var(--omi-green); font-weight: bold;">ENABLE TYPING SOUNDS</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">SOUND PROFILE:</span>
+                <select class="cyber-select" id="selectTypingProfile">
+                    <option value="mechanical">MECHANICAL SWITCH (Tactile Click)</option>
+                    <option value="terminal">CYBER TERMINAL (Digital Beep)</option>
+                    <option value="typewriter">TYPEWRITER (Classic Mechanical)</option>
+                    <option value="bubble">SOFT BUBBLE (Subtle Pop)</option>
+                    <option value="custom">CUSTOM AUDIO FILE (.mp3 / .wav)</option>
+                </select>
+            </div>
+
+            <div class="setting-row" id="customAudioUploadRow">
+                <span class="setting-label">CUSTOM AUDIO FILE:</span>
+                <div class="setting-control-group">
+                    <input type="file" id="inputCustomAudioFile" accept="audio/*" style="display: none;">
+                    <button class="cyber-file-btn" id="btnUploadCustomAudio">CHOOSE AUDIO FILE</button>
+                    <span id="customAudioFileName" style="font-family: var(--font-mono); font-size: 11px; color: var(--omi-yellow);">None loaded</span>
+                </div>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">VOLUME: <span id="typingVolumeDisplay">60%</span></span>
+                <div class="setting-control-group">
+                    <input type="range" class="cyber-range" id="rangeTypingVolume" min="0" max="1" step="0.05" value="0.6">
+                    <button class="btn-hud" id="btnTestTypingSound">TEST</button>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-cyber-primary cyber-cut-sm" id="btnSaveTypingSettings" style="padding: 7px 18px; font-size: 12px;">DONE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         CUSTOM THEME MODAL
+         ==================================================================== -->
+    <div class="modal-overlay" id="modalCustomTheme">
+        <div class="modal-box modal-box-pink cyber-cut">
+            <div class="modal-title modal-title-pink">
+                <span>CREATE CUSTOM THEME</span>
+                <button class="modal-close-btn" id="btnCloseThemeModal">✕</button>
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">THEME NAME:</span>
+                <input type="text" class="search-input" id="inputCustomThemeName" placeholder="My Cyber Theme..." maxlength="20">
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">ACCENT COLOR (GREEN/NEON):</span>
+                <input type="color" id="colorThemeGreen" value="#00FF88" style="width: 100%; height: 36px; background: transparent; border: none; cursor: pointer;">
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">SECONDARY COLOR (BLUE/CYAN):</span>
+                <input type="color" id="colorThemeBlue" value="#0088FF" style="width: 100%; height: 36px; background: transparent; border: none; cursor: pointer;">
+            </div>
+
+            <div class="setting-row">
+                <span class="setting-label">HIGHLIGHT COLOR (PINK/RED):</span>
+                <input type="color" id="colorThemePink" value="#FF1A75" style="width: 100%; height: 36px; background: transparent; border: none; cursor: pointer;">
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-editor-action" id="btnCancelCustomTheme">CANCEL</button>
+                <button class="btn-cyber-primary cyber-cut-sm" id="btnSaveCustomTheme" style="padding: 7px 18px; font-size: 12px;">SAVE THEME</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================
+         ALARM ALERT MODAL
          ==================================================================== -->
     <div class="alarm-overlay-hud" id="alarmModal">
         <div class="alarm-alert-box cyber-cut">
             <div class="alarm-banner-header">
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
-                <span>CHRONO ALARM TRIGGERED</span>
+                <span>ALARM</span>
                 <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
             </div>
 
-            <div class="alarm-target-title" id="alarmModalTitle">PROTOCOL ALERT</div>
+            <div class="alarm-target-title" id="alarmModalTitle">ALARM</div>
             <div class="alarm-target-desc" id="alarmModalDesc">Reminder details...</div>
 
             <div class="alarm-hud-actions">
                 <button class="btn-alarm-snooze cyber-cut-sm" id="btnSnooze5">SNOOZE +5M</button>
                 <button class="btn-alarm-snooze cyber-cut-sm" id="btnSnooze15">SNOOZE +15M</button>
-                <button class="btn-alarm-dismiss cyber-cut-sm" id="btnDismissAlarm">DISMISS ALARM</button>
+                <button class="btn-alarm-dismiss cyber-cut-sm" id="btnDismissAlarm">DISMISS</button>
             </div>
         </div>
     </div>
 
-    <!-- Script Modules -->
+    <!-- Scripts -->
     <script src="js/sound-engine.js"></script>
-    <script src="js/alarm-manager.js"></script>
     <script src="js/notes-manager.js"></script>
+    <script src="js/alarm-manager.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

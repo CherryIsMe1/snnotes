@@ -1,18 +1,18 @@
 /**
- * CYBERDECK // NEURAL DATA SHARDS MANAGER
- * Persistent storage, tag indexing, priority matrix, and checklist logic.
+ * SNNOTES // NOTES & CHECKLIST MANAGER
+ * Handles notes storage, interactive checklists, tagging, and priority filtering.
  */
-class CyberNotesManager {
+class NotesManager {
     constructor() {
         this.notes = new Map(); // id -> note
-        this.tags = new Set(['MISSION', 'INTEL', 'PERSONAL', 'SYSTEM', 'CORPO']);
+        this.tags = new Set(['WORK', 'PROJECT', 'TODO', 'IDEAS', 'PERSONAL']);
         this.activeFilter = {
             category: 'all', // 'all', 'pinned', 'urgent', 'alarm', 'completed'
             tag: null,
             searchQuery: '',
             priority: null
         };
-        this.sortBy = 'updated-desc'; // 'updated-desc', 'alarm-asc', 'priority-desc', 'title-asc'
+        this.sortBy = 'updated-desc';
         this.selectedNoteId = null;
         this.onNotesChanged = null;
         this.onNoteSelected = null;
@@ -22,21 +22,21 @@ class CyberNotesManager {
 
     loadFromStorage() {
         try {
-            const rawNotes = localStorage.getItem('cyberdeck_notes_v1');
+            const rawNotes = localStorage.getItem('snnotes_library_v1');
             if (rawNotes) {
                 const parsed = JSON.parse(rawNotes);
                 parsed.forEach(note => {
+                    if (!note.checklist) note.checklist = [];
                     this.notes.set(note.id, note);
                     if (note.tags && Array.isArray(note.tags)) {
                         note.tags.forEach(t => this.tags.add(t.toUpperCase()));
                     }
                 });
             } else {
-                // Populate default starter shards if empty
-                this.seedInitialShards();
+                this.seedInitialNotes();
             }
 
-            const rawTags = localStorage.getItem('cyberdeck_tags_v1');
+            const rawTags = localStorage.getItem('snnotes_tags_v1');
             if (rawTags) {
                 const parsedTags = JSON.parse(rawTags);
                 parsedTags.forEach(t => this.tags.add(t.toUpperCase()));
@@ -49,28 +49,34 @@ class CyberNotesManager {
     saveToStorage() {
         try {
             const arr = Array.from(this.notes.values());
-            localStorage.setItem('cyberdeck_notes_v1', JSON.stringify(arr));
-            localStorage.setItem('cyberdeck_tags_v1', JSON.stringify(Array.from(this.tags)));
+            localStorage.setItem('snnotes_library_v1', JSON.stringify(arr));
+            localStorage.setItem('snnotes_tags_v1', JSON.stringify(Array.from(this.tags)));
         } catch (e) {
             console.warn("Storage save error:", e);
         }
     }
 
-    seedInitialShards() {
+    seedInitialNotes() {
         const sample1 = {
-            id: 'shard_' + Date.now() + '_1',
-            title: 'SNDECK PROTOCOL // OPERATIONAL DIRECTIVE',
-            content: `# MISSION BRIEFING\n\n- [x] Integrate CyberDeck Notes with futuristic sound synthesizer\n- [ ] Configure neural alarms and reminder timers\n- [ ] Deploy Windows desktop package with GitHub Actions CI\n\nRemember: Cyberpunk systems prioritize zero latency, high contrast, and mechanical acoustic feedback.`,
-            tags: ['MISSION', 'SYSTEM'],
-            priority: 'high', // 'low', 'med', 'high'
+            id: 'note_' + Date.now() + '_1',
+            title: 'Welcome to SNNotes',
+            content: `SNNotes is your companion note-taking and alarm application.\n\nKey Features:\n- Interactive checklists with live progress tracking\n- Customizable keystroke typing sounds with custom audio upload\n- SNDeck themes (SN, ER, Blossom, Basic) and retro scanline filter\n- Timers, alarms, and quick reminders\n- Full offline storage on Windows`,
+            checklist: [
+                { id: 'task_1', text: 'Select your favorite theme in the top bar', done: true },
+                { id: 'task_2', text: 'Try typing with mechanical or cyber switch sound effects', done: false },
+                { id: 'task_3', text: 'Set an alarm reminder for an upcoming task', done: false },
+                { id: 'task_4', text: 'Toggle the retro CRT scanline filter (RETRO: ON/OFF)', done: false }
+            ],
+            tags: ['TODO', 'PROJECT'],
+            priority: 'high',
             pinned: true,
             completed: false,
             createdAt: Date.now() - 3600000,
             updatedAt: Date.now() - 1800000,
             alarm: {
                 enabled: true,
-                timestamp: Date.now() + 15 * 60 * 1000, // 15 mins from now
-                label: 'MISSION PROTOCOL SYNC CHECK',
+                timestamp: Date.now() + 30 * 60 * 1000,
+                label: 'Task Review',
                 sound: 'siren',
                 repeat: 'none',
                 triggered: false
@@ -78,10 +84,15 @@ class CyberNotesManager {
         };
 
         const sample2 = {
-            id: 'shard_' + Date.now() + '_2',
-            title: 'NETRUNNER INTEL // NIGHT CITY ENCRYPTION KEYS',
-            content: `Access codes for subnet 404:\n\n- Proxy Alpha: 127.0.0.1:8080 (Encrypted)\n- ICE Breaker: Sandevistan Overclock DSP\n- Frequency: 24-bit 48kHz audio stream\n\nAlways maintain audio backups in local storage.`,
-            tags: ['INTEL'],
+            id: 'note_' + Date.now() + '_2',
+            title: 'Project Roadmap',
+            content: `Notes and ideas for the upcoming release:\n- Windows installer packaging with GitHub Actions\n- Smooth animations and keyboard shortcuts (Ctrl+N, Ctrl+S, Ctrl+F)\n- Clean export and backup options`,
+            checklist: [
+                { id: 'task_2_1', text: 'Verify audio latency on rapid keystrokes', done: true },
+                { id: 'task_2_2', text: 'Check checklist progress indicator', done: true },
+                { id: 'task_2_3', text: 'Final build verification', done: false }
+            ],
+            tags: ['WORK', 'IDEAS'],
             priority: 'med',
             pinned: false,
             completed: false,
@@ -104,12 +115,13 @@ class CyberNotesManager {
     }
 
     createNote(data = {}) {
-        const id = 'shard_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
+        const id = 'note_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
         const newNote = {
             id,
-            title: data.title || 'UNTITLED SHARD',
+            title: data.title || 'Untitled Note',
             content: data.content || '',
-            tags: data.tags || ['MISSION'],
+            checklist: data.checklist || [],
+            tags: data.tags || ['TODO'],
             priority: data.priority || 'med',
             pinned: !!data.pinned,
             completed: false,
@@ -119,135 +131,218 @@ class CyberNotesManager {
         };
 
         this.notes.set(id, newNote);
-        this.selectedNoteId = id;
         this.saveToStorage();
-        this.notifyChange();
+        if (this.onNotesChanged) this.onNotesChanged();
         return newNote;
     }
 
-    updateNote(id, patch, notify = true) {
+    updateNote(id, partial) {
         const note = this.notes.get(id);
         if (!note) return null;
 
-        Object.assign(note, patch, { updatedAt: Date.now() });
+        Object.assign(note, partial, { updatedAt: Date.now() });
 
-        if (patch.tags && Array.isArray(patch.tags)) {
-            patch.tags.forEach(t => this.tags.add(t.toUpperCase()));
+        // Update tags collection if note tags changed
+        if (partial.tags && Array.isArray(partial.tags)) {
+            partial.tags.forEach(t => this.tags.add(t.toUpperCase()));
         }
 
-        this.notes.set(id, note);
         this.saveToStorage();
-        if (notify) this.notifyChange();
+        if (this.onNotesChanged) this.onNotesChanged();
         return note;
     }
 
     deleteNote(id) {
-        const deleted = this.notes.delete(id);
-        if (this.selectedNoteId === id) {
-            const remaining = this.getFilteredNotes();
-            this.selectedNoteId = remaining.length > 0 ? remaining[0].id : null;
-        }
+        if (!this.notes.has(id)) return false;
+        this.notes.delete(id);
         this.saveToStorage();
-        this.notifyChange();
-        return deleted;
+
+        if (this.selectedNoteId === id) {
+            this.selectedNoteId = null;
+        }
+
+        if (this.onNotesChanged) this.onNotesChanged();
+        return true;
     }
 
     togglePin(id) {
         const note = this.notes.get(id);
         if (!note) return;
-        note.pinned = !note.pinned;
-        note.updatedAt = Date.now();
-        this.saveToStorage();
-        this.notifyChange();
+        return this.updateNote(id, { pinned: !note.pinned });
     }
 
-    toggleComplete(id) {
+    toggleCompleted(id) {
         const note = this.notes.get(id);
         if (!note) return;
-        note.completed = !note.completed;
-        note.updatedAt = Date.now();
-        this.saveToStorage();
-        this.notifyChange();
+        return this.updateNote(id, { completed: !note.completed });
     }
 
-    getFilteredNotes() {
-        let list = Array.from(this.notes.values());
+    // Checklist operations
+    addChecklistItem(noteId, text) {
+        const note = this.notes.get(noteId);
+        if (!note || !text.trim()) return null;
+        if (!note.checklist) note.checklist = [];
 
-        // Category Filter
-        if (this.activeFilter.category === 'pinned') {
-            list = list.filter(n => n.pinned && !n.completed);
-        } else if (this.activeFilter.category === 'urgent') {
-            list = list.filter(n => n.priority === 'high' && !n.completed);
-        } else if (this.activeFilter.category === 'alarm') {
-            list = list.filter(n => n.alarm && n.alarm.enabled && !n.completed);
-        } else if (this.activeFilter.category === 'completed') {
-            list = list.filter(n => n.completed);
-        } else {
-            // 'all': show active notes (uncompleted) unless specific search
-            list = list.filter(n => !n.completed);
-        }
-
-        // Tag filter
-        if (this.activeFilter.tag) {
-            const t = this.activeFilter.tag.toUpperCase();
-            list = list.filter(n => n.tags && n.tags.some(tag => tag.toUpperCase() === t));
-        }
-
-        // Priority filter
-        if (this.activeFilter.priority) {
-            list = list.filter(n => n.priority === this.activeFilter.priority);
-        }
-
-        // Search Query
-        if (this.activeFilter.searchQuery) {
-            const q = this.activeFilter.searchQuery.toLowerCase();
-            list = list.filter(n =>
-                (n.title && n.title.toLowerCase().includes(q)) ||
-                (n.content && n.content.toLowerCase().includes(q)) ||
-                (n.tags && n.tags.some(tag => tag.toLowerCase().includes(q)))
-            );
-        }
-
-        // Sorting
-        list.sort((a, b) => {
-            // Pinned notes always surface first in default view
-            if (this.activeFilter.category !== 'pinned') {
-                if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
-            }
-
-            if (this.sortBy === 'updated-desc') {
-                return b.updatedAt - a.updatedAt;
-            } else if (this.sortBy === 'created-desc') {
-                return b.createdAt - a.createdAt;
-            } else if (this.sortBy === 'alarm-asc') {
-                const aTime = (a.alarm && a.alarm.enabled) ? a.alarm.timestamp : Infinity;
-                const bTime = (b.alarm && b.alarm.enabled) ? b.alarm.timestamp : Infinity;
-                return aTime - bTime;
-            } else if (this.sortBy === 'priority-desc') {
-                const pVal = { high: 3, med: 2, low: 1 };
-                return (pVal[b.priority] || 0) - (pVal[a.priority] || 0);
-            } else if (this.sortBy === 'title-asc') {
-                return a.title.localeCompare(b.title);
-            }
-            return b.updatedAt - a.updatedAt;
-        });
-
-        return list;
+        const item = {
+            id: 'task_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+            text: text.trim(),
+            done: false
+        };
+        note.checklist.push(item);
+        this.updateNote(noteId, { checklist: note.checklist });
+        return item;
     }
 
-    addTag(tagName) {
-        if (!tagName) return;
-        const clean = tagName.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
+    toggleChecklistItem(noteId, taskId) {
+        const note = this.notes.get(noteId);
+        if (!note || !note.checklist) return false;
+
+        const item = note.checklist.find(t => t.id === taskId);
+        if (!item) return false;
+
+        item.done = !item.done;
+
+        // Auto mark note completed if all tasks are done
+        const stats = this.getChecklistStats(note);
+        if (stats.total > 0 && stats.completed === stats.total) {
+            note.completed = true;
+        } else if (stats.completed < stats.total && note.completed) {
+            note.completed = false;
+        }
+
+        this.updateNote(noteId, { checklist: note.checklist, completed: note.completed });
+        return item.done;
+    }
+
+    deleteChecklistItem(noteId, taskId) {
+        const note = this.notes.get(noteId);
+        if (!note || !note.checklist) return false;
+
+        note.checklist = note.checklist.filter(t => t.id !== taskId);
+        this.updateNote(noteId, { checklist: note.checklist });
+        return true;
+    }
+
+    getChecklistStats(note) {
+        if (!note || !note.checklist || note.checklist.length === 0) {
+            return { total: 0, completed: 0, percentage: 0 };
+        }
+        const total = note.checklist.length;
+        const completed = note.checklist.filter(t => t.done).length;
+        const percentage = Math.round((completed / total) * 100);
+        return { total, completed, percentage };
+    }
+
+    addCustomTag(tag) {
+        if (!tag || !tag.trim()) return;
+        const clean = tag.trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '');
         if (clean) {
             this.tags.add(clean);
             this.saveToStorage();
-            this.notifyChange();
+            if (this.onNotesChanged) this.onNotesChanged();
         }
     }
 
-    notifyChange() {
-        if (this.onNotesChanged) this.onNotesChanged();
+    getFilteredNotes() {
+        const all = Array.from(this.notes.values());
+
+        return all.filter(note => {
+            // Category filter
+            if (this.activeFilter.category === 'pinned' && !note.pinned) return false;
+            if (this.activeFilter.category === 'urgent' && note.priority !== 'high') return false;
+            if (this.activeFilter.category === 'alarm' && (!note.alarm || !note.alarm.enabled)) return false;
+            if (this.activeFilter.category === 'completed' && !note.completed) return false;
+
+            // Specific Tag filter
+            if (this.activeFilter.tag && (!note.tags || !note.tags.includes(this.activeFilter.tag))) {
+                return false;
+            }
+
+            // Text search
+            if (this.activeFilter.searchQuery) {
+                const q = this.activeFilter.searchQuery.toLowerCase();
+                const titleMatch = (note.title || '').toLowerCase().includes(q);
+                const contentMatch = (note.content || '').toLowerCase().includes(q);
+                const tagMatch = note.tags && note.tags.some(t => t.toLowerCase().includes(q));
+                const checklistMatch = note.checklist && note.checklist.some(t => t.text.toLowerCase().includes(q));
+                if (!titleMatch && !contentMatch && !tagMatch && !checklistMatch) return false;
+            }
+
+            return true;
+        }).sort((a, b) => {
+            if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+
+            if (this.sortBy === 'updated-desc') {
+                return (b.updatedAt || 0) - (a.updatedAt || 0);
+            }
+            if (this.sortBy === 'created-desc') {
+                return (b.createdAt || 0) - (a.createdAt || 0);
+            }
+            if (this.sortBy === 'title-asc') {
+                return (a.title || '').localeCompare(b.title || '');
+            }
+            if (this.sortBy === 'priority-desc') {
+                const weight = { high: 3, med: 2, low: 1 };
+                return (weight[b.priority] || 0) - (weight[a.priority] || 0);
+            }
+            if (this.sortBy === 'alarm-asc') {
+                const timeA = (a.alarm && a.alarm.enabled) ? a.alarm.timestamp : Infinity;
+                const timeB = (b.alarm && b.alarm.enabled) ? b.alarm.timestamp : Infinity;
+                return timeA - timeB;
+            }
+            return 0;
+        });
+    }
+
+    getCounts() {
+        const all = Array.from(this.notes.values());
+        return {
+            all: all.length,
+            pinned: all.filter(n => n.pinned).length,
+            urgent: all.filter(n => n.priority === 'high').length,
+            alarm: all.filter(n => n.alarm && n.alarm.enabled).length,
+            completed: all.filter(n => n.completed).length
+        };
+    }
+
+    exportJSON() {
+        const data = {
+            version: '1.0.0',
+            exportedAt: new Date().toISOString(),
+            notes: Array.from(this.notes.values()),
+            tags: Array.from(this.tags)
+        };
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `snnotes_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    }
+
+    importJSON(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            if (!data.notes || !Array.isArray(data.notes)) throw new Error('Invalid format');
+            let count = 0;
+            data.notes.forEach(note => {
+                if (note && note.id && note.title) {
+                    if (!note.checklist) note.checklist = [];
+                    this.notes.set(note.id, note);
+                    count++;
+                }
+            });
+            if (data.tags && Array.isArray(data.tags)) {
+                data.tags.forEach(t => this.tags.add(t.toUpperCase()));
+            }
+            this.saveToStorage();
+            if (this.onNotesChanged) this.onNotesChanged();
+            return { success: true, count };
+        } catch (e) {
+            return { success: false, error: e.message };
+        }
     }
 }
 
-window.NotesManager = new CyberNotesManager();
+window.notesManager = new NotesManager();

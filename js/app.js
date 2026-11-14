@@ -1,40 +1,50 @@
 /**
- * CYBERDECK // NEURAL LOG & ALARM CONTROLLER
- * Main application coordinator, event listeners, live clock, markdown renderer.
+ * SNNOTES // MAIN APPLICATION CONTROLLER
+ * Manages themes, retro CRT scanline toggle, keystroke audio, interactive checklists,
+ * alarms, markdown preview, hotkeys, and note storage.
  */
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
+    // -------------------------------------------------------------------------
+    // DOM Element References
+    // -------------------------------------------------------------------------
     const elements = {
+        // Top HUD
         hudClock: document.getElementById('hudClock'),
         hudAlarmTicker: document.getElementById('hudAlarmTicker'),
         alarmTickerText: document.getElementById('alarmTickerText'),
+        themeSelect: document.getElementById('themeSelect'),
+        btnCreateTheme: document.getElementById('btnCreateTheme'),
+        btnToggleRetro: document.getElementById('btnToggleRetro'),
         btnToggleSound: document.getElementById('btnToggleSound'),
-        btnNewShard: document.getElementById('btnNewShard'),
-        shardsList: document.getElementById('shardsList'),
-        tagsCloud: document.getElementById('tagsCloud'),
-        btnAddCustomTag: document.getElementById('btnAddCustomTag'),
+        btnTypingSettings: document.getElementById('btnTypingSettings'),
+        btnExportAll: document.getElementById('btnExportAll'),
+        inputImportBackup: document.getElementById('inputImportBackup'),
+        scanlines: document.getElementById('scanlines'),
+
+        // Left Sidebar
+        btnNewNote: document.getElementById('btnNewNote'),
         filterItems: document.querySelectorAll('.filter-item'),
         quickTimers: document.querySelectorAll('.btn-quick-timer'),
-        inputSearch: document.getElementById('inputSearch'),
-        selectSort: document.getElementById('selectSort'),
+        tagsCloud: document.getElementById('tagsCloud'),
+        btnAddCustomTag: document.getElementById('btnAddCustomTag'),
+        countAll: document.getElementById('countAll'),
+        countPinned: document.getElementById('countPinned'),
+        countUrgent: document.getElementById('countUrgent'),
+        countAlarms: document.getElementById('countAlarms'),
+        countCompleted: document.getElementById('countCompleted'),
 
-        // Editor Elements
-        inputShardTitle: document.getElementById('inputShardTitle'),
-        inputShardContent: document.getElementById('inputShardContent'),
-        shardMarkdownPreview: document.getElementById('shardMarkdownPreview'),
-        btnToggleView: document.getElementById('btnToggleView'),
-        viewModeIcon: document.getElementById('viewModeIcon'),
+        // Center Editor
+        editorStatus: document.getElementById('editorStatus'),
         btnTogglePin: document.getElementById('btnTogglePin'),
         pinIcon: document.getElementById('pinIcon'),
+        btnToggleChecklist: document.getElementById('btnToggleChecklist'),
+        btnToggleView: document.getElementById('btnToggleView'),
+        viewModeIcon: document.getElementById('viewModeIcon'),
         btnExportMd: document.getElementById('btnExportMd'),
-        btnDeleteShard: document.getElementById('btnDeleteShard'),
-        selectShardTag: document.getElementById('selectShardTag'),
+        btnDeleteNote: document.getElementById('btnDeleteNote'),
+        inputNoteTitle: document.getElementById('inputNoteTitle'),
         priorityButtons: document.querySelectorAll('.btn-priority'),
-        charCount: document.getElementById('charCount'),
-        saveStatus: document.getElementById('saveStatus'),
-        editorStatus: document.getElementById('editorStatus'),
-
-        // Alarm Module
+        selectNoteTag: document.getElementById('selectNoteTag'),
         chkEnableAlarm: document.getElementById('chkEnableAlarm'),
         alarmConfigModule: document.getElementById('alarmConfigModule'),
         inputAlarmDatetime: document.getElementById('inputAlarmDatetime'),
@@ -42,28 +52,62 @@ document.addEventListener('DOMContentLoaded', () => {
         selectAlarmRepeat: document.getElementById('selectAlarmRepeat'),
         alarmTimeDisplay: document.getElementById('alarmTimeDisplay'),
 
-        // Fullscreen Alarm Modal
+        // Checklist Component
+        checklistContainer: document.getElementById('checklistContainer'),
+        checklistProgressFill: document.getElementById('checklistProgressFill'),
+        checklistProgressText: document.getElementById('checklistProgressText'),
+        checklistItemsList: document.getElementById('checklistItemsList'),
+        inputNewTask: document.getElementById('inputNewTask'),
+        btnAddTask: document.getElementById('btnAddTask'),
+
+        // Text & Preview
+        inputNoteContent: document.getElementById('inputNoteContent'),
+        noteMarkdownPreview: document.getElementById('noteMarkdownPreview'),
+        charCount: document.getElementById('charCount'),
+        saveStatus: document.getElementById('saveStatus'),
+
+        // Right Sidebar
+        inputSearch: document.getElementById('inputSearch'),
+        selectSort: document.getElementById('selectSort'),
+        notesList: document.getElementById('notesList'),
+
+        // Modals
+        modalTypingSettings: document.getElementById('modalTypingSettings'),
+        btnCloseTypingModal: document.getElementById('btnCloseTypingModal'),
+        chkTypingEnabled: document.getElementById('chkTypingEnabled'),
+        selectTypingProfile: document.getElementById('selectTypingProfile'),
+        inputCustomAudioFile: document.getElementById('inputCustomAudioFile'),
+        btnUploadCustomAudio: document.getElementById('btnUploadCustomAudio'),
+        customAudioFileName: document.getElementById('customAudioFileName'),
+        rangeTypingVolume: document.getElementById('rangeTypingVolume'),
+        typingVolumeDisplay: document.getElementById('typingVolumeDisplay'),
+        btnTestTypingSound: document.getElementById('btnTestTypingSound'),
+        btnSaveTypingSettings: document.getElementById('btnSaveTypingSettings'),
+
+        modalCustomTheme: document.getElementById('modalCustomTheme'),
+        btnCloseThemeModal: document.getElementById('btnCloseThemeModal'),
+        btnCancelCustomTheme: document.getElementById('btnCancelCustomTheme'),
+        btnSaveCustomTheme: document.getElementById('btnSaveCustomTheme'),
+        inputCustomThemeName: document.getElementById('inputCustomThemeName'),
+        colorThemeGreen: document.getElementById('colorThemeGreen'),
+        colorThemeBlue: document.getElementById('colorThemeBlue'),
+        colorThemePink: document.getElementById('colorThemePink'),
+
         alarmModal: document.getElementById('alarmModal'),
         alarmModalTitle: document.getElementById('alarmModalTitle'),
         alarmModalDesc: document.getElementById('alarmModalDesc'),
         btnSnooze5: document.getElementById('btnSnooze5'),
         btnSnooze15: document.getElementById('btnSnooze15'),
-        btnDismissAlarm: document.getElementById('btnDismissAlarm'),
-
-        // Filter Counts
-        countAll: document.getElementById('countAll'),
-        countPinned: document.getElementById('countPinned'),
-        countUrgent: document.getElementById('countUrgent'),
-        countAlarms: document.getElementById('countAlarms'),
-        countCompleted: document.getElementById('countCompleted')
+        btnDismissAlarm: document.getElementById('btnDismissAlarm')
     };
 
     let isPreviewMode = false;
+    let isChecklistVisible = true;
     let autoSaveTimeout = null;
 
-    // =========================================================================
+    // -------------------------------------------------------------------------
     // 1. LIVE HUD CLOCK & ALARM TICKER
-    // =========================================================================
+    // -------------------------------------------------------------------------
     function updateClock() {
         const now = new Date();
         const pad = (n) => String(n).padStart(2, '0');
@@ -72,32 +116,235 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateClock, 1000);
     updateClock();
 
-    window.CyberAlarm.onTick = (nearestNote, diffMs) => {
+    window.alarmManager.onTick = (nearestNote, diffMs) => {
         if (!nearestNote || diffMs === null) {
-            elements.alarmTickerText.textContent = 'CHRONO: NO ACTIVE ALARMS';
+            elements.alarmTickerText.textContent = 'NO ACTIVE ALARMS';
         } else {
-            const timeStr = window.CyberAlarm.formatTimeRemaining(diffMs);
-            elements.alarmTickerText.textContent = `NEXT ALARM: [${nearestNote.title.slice(0, 16)}] IN ${timeStr}`;
+            const timeStr = window.alarmManager.formatTimeRemaining(diffMs);
+            elements.alarmTickerText.textContent = `${timeStr} (${nearestNote.title.slice(0, 18)})`;
         }
         updateAlarmDisplayInEditor();
     };
 
-    // =========================================================================
-    // 2. SFX TOGGLE
-    // =========================================================================
-    elements.btnToggleSound.addEventListener('click', () => {
-        const active = window.CyberSound.toggle();
-        elements.btnToggleSound.classList.toggle('active', active);
-        elements.btnToggleSound.querySelector('span').textContent = active ? 'SFX: ON' : 'SFX: OFF';
-        if (active) window.CyberSound.playClick();
+    // -------------------------------------------------------------------------
+    // 2. THEMES & CUSTOM THEME MANAGEMENT (Matched to SNDeck)
+    // -------------------------------------------------------------------------
+    const rgbFromHex = hex => {
+        const v = hex.replace('#', '');
+        return `${parseInt(v.slice(0, 2), 16)}, ${parseInt(v.slice(2, 4), 16)}, ${parseInt(v.slice(4, 6), 16)}`;
+    };
+
+    function applyTheme(themeId) {
+        document.body.removeAttribute('data-theme');
+        const customProps = [
+            '--omi-green', '--omi-blue', '--omi-pink', '--omi-purple',
+            '--omi-green-rgb', '--omi-blue-rgb', '--omi-pink-rgb',
+            '--omi-green-glow', '--omi-blue-glow', '--omi-pink-glow',
+            '--cyber-panel-border'
+        ];
+        customProps.forEach(p => document.body.style.removeProperty(p));
+
+        if (themeId.startsWith('custom-')) {
+            try {
+                const customThemes = JSON.parse(localStorage.getItem('snnotes_custom_themes') || '[]');
+                const theme = customThemes.find(t => t.id === themeId);
+                if (theme && theme.colors) {
+                    const c = theme.colors;
+                    document.body.style.setProperty('--omi-green', c.green);
+                    document.body.style.setProperty('--omi-green-rgb', rgbFromHex(c.green));
+                    document.body.style.setProperty('--omi-green-glow', `0 0 14px rgba(${rgbFromHex(c.green)}, 0.45)`);
+
+                    document.body.style.setProperty('--omi-blue', c.blue);
+                    document.body.style.setProperty('--omi-blue-rgb', rgbFromHex(c.blue));
+                    document.body.style.setProperty('--omi-blue-glow', `0 0 14px rgba(${rgbFromHex(c.blue)}, 0.4)`);
+
+                    document.body.style.setProperty('--omi-pink', c.pink);
+                    document.body.style.setProperty('--omi-pink-rgb', rgbFromHex(c.pink));
+                    document.body.style.setProperty('--omi-pink-glow', `0 0 16px rgba(${rgbFromHex(c.pink)}, 0.45)`);
+                    document.body.style.setProperty('--cyber-panel-border', `rgba(${rgbFromHex(c.pink)}, 0.35)`);
+                }
+            } catch (_) {}
+        } else if (themeId !== 'omi') {
+            document.body.setAttribute('data-theme', themeId);
+        }
+
+        elements.themeSelect.value = themeId;
+        localStorage.setItem('snnotes_theme', themeId);
+    }
+
+    function initThemes() {
+        try {
+            const customThemes = JSON.parse(localStorage.getItem('snnotes_custom_themes') || '[]');
+            customThemes.forEach(theme => {
+                if (!theme || !theme.id || !theme.label) return;
+                const opt = document.createElement('option');
+                opt.value = theme.id;
+                opt.textContent = theme.label.toUpperCase();
+                elements.themeSelect.appendChild(opt);
+            });
+        } catch (_) {}
+
+        const savedTheme = localStorage.getItem('snnotes_theme') || 'omi';
+        applyTheme(savedTheme);
+
+        elements.themeSelect.addEventListener('change', () => {
+            window.soundEngine.playClick();
+            applyTheme(elements.themeSelect.value);
+        });
+
+        // Create Custom Theme Modal
+        elements.btnCreateTheme.addEventListener('click', () => {
+            window.soundEngine.playClick();
+            elements.modalCustomTheme.classList.add('active');
+        });
+
+        const closeCustomThemeModal = () => elements.modalCustomTheme.classList.remove('active');
+        elements.btnCloseThemeModal.addEventListener('click', closeCustomThemeModal);
+        elements.btnCancelCustomTheme.addEventListener('click', closeCustomThemeModal);
+
+        elements.btnSaveCustomTheme.addEventListener('click', () => {
+            const name = elements.inputCustomThemeName.value.trim();
+            if (!name) return;
+
+            const themeId = 'custom-' + Date.now();
+            const colors = {
+                green: elements.colorThemeGreen.value,
+                blue: elements.colorThemeBlue.value,
+                pink: elements.colorThemePink.value
+            };
+
+            const customThemes = JSON.parse(localStorage.getItem('snnotes_custom_themes') || '[]');
+            customThemes.push({ id: themeId, label: name, colors });
+            localStorage.setItem('snnotes_custom_themes', JSON.stringify(customThemes));
+
+            const opt = document.createElement('option');
+            opt.value = themeId;
+            opt.textContent = name.toUpperCase();
+            elements.themeSelect.appendChild(opt);
+
+            applyTheme(themeId);
+            closeCustomThemeModal();
+            window.soundEngine.playSuccess();
+        });
+    }
+
+    initThemes();
+
+    // -------------------------------------------------------------------------
+    // 3. RETRO SCANLINE CRT FILTER TOGGLE (Like in SNDeck)
+    // -------------------------------------------------------------------------
+    const savedRetro = localStorage.getItem('snnotes_retro_effect');
+    const isRetroActive = savedRetro !== 'false'; // default to true
+    if (!isRetroActive) {
+        elements.scanlines.classList.add('disabled');
+        elements.btnToggleRetro.classList.remove('active');
+        elements.btnToggleRetro.querySelector('span').textContent = 'RETRO: OFF';
+    }
+
+    elements.btnToggleRetro.addEventListener('click', () => {
+        window.soundEngine.playClick();
+        const active = elements.scanlines.classList.toggle('disabled');
+        // When .disabled is present, scanline is OFF
+        const currentlyOn = !active;
+        elements.btnToggleRetro.classList.toggle('active', currentlyOn);
+        elements.btnToggleRetro.querySelector('span').textContent = currentlyOn ? 'RETRO: ON' : 'RETRO: OFF';
+        localStorage.setItem('snnotes_retro_effect', String(currentlyOn));
     });
 
-    // =========================================================================
-    // 3. SHARDS DIRECTORY & CARDS RENDERING
-    // =========================================================================
-    function renderShardsList() {
-        const list = window.NotesManager.getFilteredNotes();
-        elements.shardsList.replaceChildren();
+    // -------------------------------------------------------------------------
+    // 4. UI SFX & KEYSTROKE TYPING AUDIO SYSTEM
+    // -------------------------------------------------------------------------
+    elements.btnToggleSound.addEventListener('click', () => {
+        const active = window.soundEngine.toggleSFX();
+        elements.btnToggleSound.classList.toggle('active', active);
+        elements.btnToggleSound.querySelector('span').textContent = active ? 'SFX: ON' : 'SFX: OFF';
+        if (active) window.soundEngine.playClick();
+    });
+
+    function initTypingAudioUI() {
+        const se = window.soundEngine;
+        elements.chkTypingEnabled.checked = se.typingEnabled;
+        elements.selectTypingProfile.value = se.typingProfile;
+        elements.rangeTypingVolume.value = se.typingVolume;
+        elements.typingVolumeDisplay.textContent = Math.round(se.typingVolume * 100) + '%';
+        if (se.customAudioName) elements.customAudioFileName.textContent = se.customAudioName;
+
+        elements.btnTypingSettings.addEventListener('click', () => {
+            window.soundEngine.playClick();
+            elements.modalTypingSettings.classList.add('active');
+        });
+
+        const closeTypingModal = () => elements.modalTypingSettings.classList.remove('active');
+        elements.btnCloseTypingModal.addEventListener('click', closeTypingModal);
+        elements.btnSaveTypingSettings.addEventListener('click', () => {
+            closeTypingModal();
+            window.soundEngine.playClick();
+        });
+
+        elements.chkTypingEnabled.addEventListener('change', () => {
+            const on = se.toggleTypingSFX(elements.chkTypingEnabled.checked);
+            elements.btnTypingSettings.classList.toggle('active', on);
+            elements.btnTypingSettings.querySelector('span').textContent = on ? 'TYPING: ON' : 'TYPING: OFF';
+        });
+
+        elements.selectTypingProfile.addEventListener('change', () => {
+            se.setTypingProfile(elements.selectTypingProfile.value);
+        });
+
+        elements.rangeTypingVolume.addEventListener('input', () => {
+            const vol = parseFloat(elements.rangeTypingVolume.value);
+            se.setTypingVolume(vol);
+            elements.typingVolumeDisplay.textContent = Math.round(vol * 100) + '%';
+        });
+
+        elements.btnTestTypingSound.addEventListener('click', () => {
+            se.playTypingSound();
+        });
+
+        // Custom audio upload button
+        elements.btnUploadCustomAudio.addEventListener('click', () => {
+            elements.inputCustomAudioFile.click();
+        });
+
+        elements.inputCustomAudioFile.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            elements.customAudioFileName.textContent = 'Decoding...';
+            const res = await se.loadCustomAudioFile(file);
+            if (res.success) {
+                elements.customAudioFileName.textContent = res.name;
+                elements.selectTypingProfile.value = 'custom';
+            } else {
+                elements.customAudioFileName.textContent = 'Decode Error';
+            }
+        });
+
+        // Attach typing sound listeners to all interactive inputs
+        const typingTargets = [
+            elements.inputNoteTitle,
+            elements.inputNoteContent,
+            elements.inputNewTask,
+            elements.inputSearch
+        ];
+
+        typingTargets.forEach(el => {
+            if (!el) return;
+            el.addEventListener('keydown', (e) => {
+                // Ignore modifier keys alone
+                if (['Control', 'Shift', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
+                window.soundEngine.playTypingSound();
+            });
+        });
+    }
+
+    initTypingAudioUI();
+
+    // -------------------------------------------------------------------------
+    // 5. NOTES DIRECTORY & NOTE CARDS
+    // -------------------------------------------------------------------------
+    function renderNotesList() {
+        const list = window.notesManager.getFilteredNotes();
+        elements.notesList.replaceChildren();
 
         if (list.length === 0) {
             const emptyEl = document.createElement('div');
@@ -105,14 +352,14 @@ document.addEventListener('DOMContentLoaded', () => {
             emptyEl.style.textAlign = 'center';
             emptyEl.style.color = 'var(--cyber-text-muted)';
             emptyEl.style.fontFamily = 'var(--font-mono)';
-            emptyEl.textContent = '[NO DATA SHARDS FOUND IN THIS FILTER]';
-            elements.shardsList.appendChild(emptyEl);
+            emptyEl.textContent = '[NO NOTES IN THIS FILTER]';
+            elements.notesList.appendChild(emptyEl);
             return;
         }
 
         list.forEach(note => {
             const card = document.createElement('div');
-            card.className = `shard-card cyber-cut-sm ${note.id === window.NotesManager.selectedNoteId ? 'active' : ''}`;
+            card.className = `shard-card cyber-cut-sm ${note.id === window.notesManager.selectedNoteId ? 'active' : ''}`;
             card.setAttribute('data-priority', note.priority);
             card.setAttribute('data-id', note.id);
 
@@ -121,7 +368,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const title = document.createElement('div');
             title.className = 'card-title';
-            title.textContent = note.title || 'UNTITLED SHARD';
+            title.textContent = note.title || 'Untitled Note';
             topRow.appendChild(title);
 
             if (note.pinned) {
@@ -132,11 +379,25 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             card.appendChild(topRow);
 
+            // Preview
             const preview = document.createElement('div');
             preview.className = 'card-preview';
-            preview.textContent = note.content.replace(/[#*`[\]]/g, '').slice(0, 120) || '(Empty shard)';
+            preview.textContent = note.content.replace(/[#*`[\]]/g, '').slice(0, 110) || '(Empty note)';
             card.appendChild(preview);
 
+            // Checklist progress bar on card
+            const stats = window.notesManager.getChecklistStats(note);
+            if (stats.total > 0) {
+                const progressDiv = document.createElement('div');
+                progressDiv.className = 'card-checklist-progress';
+                progressDiv.innerHTML = `
+                    <div class="card-checklist-bar"><div class="card-checklist-fill" style="width: ${stats.percentage}%;"></div></div>
+                    <span>${stats.completed}/${stats.total} (${stats.percentage}%)</span>
+                `;
+                card.appendChild(progressDiv);
+            }
+
+            // Bottom row (Tags + Alarm)
             const bottomRow = document.createElement('div');
             bottomRow.className = 'card-bottom-row';
 
@@ -156,74 +417,68 @@ document.addEventListener('DOMContentLoaded', () => {
                 const alarmChip = document.createElement('div');
                 const diff = note.alarm.timestamp - Date.now();
                 alarmChip.className = `card-alarm-chip ${diff <= 0 ? 'urgent' : ''}`;
-                const timeText = diff > 0 ? window.CyberAlarm.formatTimeRemaining(diff) : 'DUE';
-                alarmChip.innerHTML = `⏰ ${timeText}`;
+                const timeText = diff > 0 ? window.alarmManager.formatTimeRemaining(diff) : 'DUE';
+                alarmChip.textContent = `⏰ ${timeText}`;
                 bottomRow.appendChild(alarmChip);
             }
 
             card.appendChild(bottomRow);
 
             card.addEventListener('click', () => {
-                window.CyberSound.playClick();
-                selectShard(note.id);
+                window.soundEngine.playClick();
+                selectNote(note.id);
             });
 
-            elements.shardsList.appendChild(card);
+            elements.notesList.appendChild(card);
         });
 
         updateFilterCounts();
     }
 
     function updateFilterCounts() {
-        const all = window.NotesManager.getAllNotes();
-        elements.countAll.textContent = all.filter(n => !n.completed).length;
-        elements.countPinned.textContent = all.filter(n => n.pinned && !n.completed).length;
-        elements.countUrgent.textContent = all.filter(n => n.priority === 'high' && !n.completed).length;
-        elements.countAlarms.textContent = all.filter(n => n.alarm && n.alarm.enabled && !n.completed).length;
-        elements.countCompleted.textContent = all.filter(n => n.completed).length;
+        const counts = window.notesManager.getCounts();
+        elements.countAll.textContent = counts.all;
+        elements.countPinned.textContent = counts.pinned;
+        elements.countUrgent.textContent = counts.urgent;
+        elements.countAlarms.textContent = counts.alarm;
+        elements.countCompleted.textContent = counts.completed;
     }
 
     function renderTags() {
         elements.tagsCloud.replaceChildren();
-        elements.selectShardTag.replaceChildren();
+        elements.selectNoteTag.replaceChildren();
 
-        const allTags = Array.from(window.NotesManager.tags);
+        const allTags = Array.from(window.notesManager.tags);
 
         allTags.forEach(tag => {
-            // Sidebar chip
             const chip = document.createElement('button');
-            chip.className = `tag-chip cyber-cut-sm ${window.NotesManager.activeFilter.tag === tag ? 'active' : ''}`;
+            chip.className = `tag-chip cyber-cut-sm ${window.notesManager.activeFilter.tag === tag ? 'active' : ''}`;
             chip.textContent = `#${tag}`;
             chip.addEventListener('click', () => {
-                window.CyberSound.playClick();
-                if (window.NotesManager.activeFilter.tag === tag) {
-                    window.NotesManager.activeFilter.tag = null;
-                } else {
-                    window.NotesManager.activeFilter.tag = tag;
-                }
+                window.soundEngine.playClick();
+                window.notesManager.activeFilter.tag = (window.notesManager.activeFilter.tag === tag) ? null : tag;
                 renderTags();
-                renderShardsList();
+                renderNotesList();
             });
             elements.tagsCloud.appendChild(chip);
 
-            // Select dropdown option
             const opt = document.createElement('option');
             opt.value = tag;
             opt.textContent = tag;
-            elements.selectShardTag.appendChild(opt);
+            elements.selectNoteTag.appendChild(opt);
         });
     }
 
-    // =========================================================================
-    // 4. EDITOR POPULATION & BINDINGS
-    // =========================================================================
-    function selectShard(id) {
-        window.NotesManager.selectedNoteId = id;
-        const note = window.NotesManager.getNote(id);
+    // -------------------------------------------------------------------------
+    // 6. EDITOR POPULATION & BINDINGS
+    // -------------------------------------------------------------------------
+    function selectNote(id) {
+        window.notesManager.selectedNoteId = id;
+        const note = window.notesManager.getNote(id);
         if (!note) return;
 
-        elements.inputShardTitle.value = note.title || '';
-        elements.inputShardContent.value = note.content || '';
+        elements.inputNoteTitle.value = note.title || '';
+        elements.inputNoteContent.value = note.content || '';
 
         // Priority Buttons
         elements.priorityButtons.forEach(btn => {
@@ -236,39 +491,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Tag
         if (note.tags && note.tags.length > 0) {
-            elements.selectShardTag.value = note.tags[0];
+            elements.selectNoteTag.value = note.tags[0];
         }
 
-        // Alarm
+        // Alarm Module
         if (note.alarm && note.alarm.enabled) {
             elements.chkEnableAlarm.checked = true;
             elements.alarmConfigModule.style.display = 'flex';
             if (note.alarm.timestamp) {
                 const date = new Date(note.alarm.timestamp);
-                // Format for datetime-local: YYYY-MM-DDTHH:mm
                 const tzOffset = date.getTimezoneOffset() * 60000;
-                const localISOTime = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
-                elements.inputAlarmDatetime.value = localISOTime;
+                elements.inputAlarmDatetime.value = (new Date(date.getTime() - tzOffset)).toISOString().slice(0, 16);
             }
             elements.selectAlarmSound.value = note.alarm.sound || 'siren';
             elements.selectAlarmRepeat.value = note.alarm.repeat || 'none';
         } else {
             elements.chkEnableAlarm.checked = false;
             elements.alarmConfigModule.style.display = 'none';
-            // Default datetime to 1 hour from now
             const defaultDate = new Date(Date.now() + 3600000);
             const tzOffset = defaultDate.getTimezoneOffset() * 60000;
             elements.inputAlarmDatetime.value = (new Date(defaultDate.getTime() - tzOffset)).toISOString().slice(0, 16);
         }
 
+        renderChecklist(note);
         updateCharCount();
         updateAlarmDisplayInEditor();
-        renderShardsList();
+        renderNotesList();
         if (isPreviewMode) renderMarkdownPreview();
     }
 
     function updateAlarmDisplayInEditor() {
-        const note = window.NotesManager.getNote(window.NotesManager.selectedNoteId);
+        const note = window.notesManager.getNote(window.notesManager.selectedNoteId);
         if (!note || !note.alarm || !note.alarm.enabled || !note.alarm.timestamp) {
             elements.alarmTimeDisplay.textContent = '';
             return;
@@ -277,29 +530,28 @@ document.addEventListener('DOMContentLoaded', () => {
         if (diff <= 0) {
             elements.alarmTimeDisplay.textContent = '[DUE NOW]';
         } else {
-            elements.alarmTimeDisplay.textContent = `[TRIGGER IN: ${window.CyberAlarm.formatTimeRemaining(diff)}]`;
+            elements.alarmTimeDisplay.textContent = `[${window.alarmManager.formatTimeRemaining(diff)}]`;
         }
     }
 
     function scheduleAutoSave() {
-        elements.saveStatus.textContent = 'SYNCING...';
+        elements.saveStatus.textContent = 'SAVING...';
         elements.saveStatus.style.color = 'var(--omi-yellow)';
         clearTimeout(autoSaveTimeout);
 
         autoSaveTimeout = setTimeout(() => {
-            saveCurrentShard();
+            saveCurrentNote();
         }, 350);
     }
 
-    function saveCurrentShard() {
-        const currentId = window.NotesManager.selectedNoteId;
+    function saveCurrentNote() {
+        const currentId = window.notesManager.selectedNoteId;
         if (!currentId) return;
 
-        const title = elements.inputShardTitle.value.trim() || 'UNTITLED SHARD';
-        const content = elements.inputShardContent.value;
-        const tag = elements.selectShardTag.value;
+        const title = elements.inputNoteTitle.value.trim() || 'Untitled Note';
+        const content = elements.inputNoteContent.value;
+        const tag = elements.selectNoteTag.value;
 
-        // Alarm configuration
         let alarm = null;
         if (elements.chkEnableAlarm.checked) {
             const dtVal = elements.inputAlarmDatetime.value;
@@ -314,51 +566,124 @@ document.addEventListener('DOMContentLoaded', () => {
             };
         }
 
-        window.NotesManager.updateNote(currentId, {
+        window.notesManager.updateNote(currentId, {
             title,
             content,
             tags: [tag],
             alarm
         });
 
-        elements.saveStatus.textContent = 'ENCRYPTED & SAVED';
+        elements.saveStatus.textContent = 'SAVED';
         elements.saveStatus.style.color = 'var(--omi-green)';
         updateCharCount();
     }
 
     function updateCharCount() {
-        const text = elements.inputShardContent.value;
+        const text = elements.inputNoteContent.value;
         const chars = text.length;
         const words = text.trim() ? text.trim().split(/\s+/).length : 0;
         elements.charCount.textContent = `${chars} CHARACTERS // ${words} WORDS`;
     }
 
-    // =========================================================================
-    // 5. SIMPLE CYBERPUNK MARKDOWN RENDERER
-    // =========================================================================
+    // -------------------------------------------------------------------------
+    // 7. INTERACTIVE CHECKLIST LOGIC
+    // -------------------------------------------------------------------------
+    function renderChecklist(note) {
+        if (!note) return;
+        elements.checklistItemsList.replaceChildren();
+
+        const stats = window.notesManager.getChecklistStats(note);
+        elements.checklistProgressFill.style.width = `${stats.percentage}%`;
+        elements.checklistProgressText.textContent = `${stats.completed}/${stats.total} (${stats.percentage}%)`;
+
+        if (!note.checklist || note.checklist.length === 0) {
+            const empty = document.createElement('div');
+            empty.style.color = 'var(--cyber-text-muted)';
+            empty.style.fontFamily = 'var(--font-mono)';
+            empty.style.fontSize = '12px';
+            empty.style.padding = '8px 0';
+            empty.textContent = 'No tasks added yet. Add one below.';
+            elements.checklistItemsList.appendChild(empty);
+            return;
+        }
+
+        note.checklist.forEach(task => {
+            const item = document.createElement('div');
+            item.className = `checklist-item ${task.done ? 'done' : ''}`;
+
+            const checkBtn = document.createElement('div');
+            checkBtn.className = 'checklist-checkbox';
+            checkBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
+            checkBtn.addEventListener('click', () => {
+                const nowDone = window.notesManager.toggleChecklistItem(note.id, task.id);
+                if (nowDone) window.soundEngine.playCheck();
+                else window.soundEngine.playClick();
+                renderChecklist(note);
+                renderNotesList();
+            });
+            item.appendChild(checkBtn);
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'checklist-item-text';
+            textSpan.textContent = task.text;
+            item.appendChild(textSpan);
+
+            const delBtn = document.createElement('button');
+            delBtn.className = 'checklist-delete-btn';
+            delBtn.textContent = '✕';
+            delBtn.title = 'Delete task';
+            delBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                window.soundEngine.playClick();
+                window.notesManager.deleteChecklistItem(note.id, task.id);
+                renderChecklist(note);
+                renderNotesList();
+            });
+            item.appendChild(delBtn);
+
+            elements.checklistItemsList.appendChild(item);
+        });
+    }
+
+    function addNewTask() {
+        const text = elements.inputNewTask.value.trim();
+        if (!text) return;
+
+        const currentId = window.notesManager.selectedNoteId;
+        if (!currentId) return;
+
+        window.notesManager.addChecklistItem(currentId, text);
+        elements.inputNewTask.value = '';
+        window.soundEngine.playSuccess();
+        renderChecklist(window.notesManager.getNote(currentId));
+        renderNotesList();
+    }
+
+    elements.btnAddTask.addEventListener('click', addNewTask);
+    elements.inputNewTask.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            addNewTask();
+        }
+    });
+
+    // Toggle Checklist visibility
+    elements.btnToggleChecklist.addEventListener('click', () => {
+        window.soundEngine.playClick();
+        isChecklistVisible = !isChecklistVisible;
+        elements.checklistContainer.style.display = isChecklistVisible ? 'flex' : 'none';
+        elements.btnToggleChecklist.classList.toggle('active', isChecklistVisible);
+    });
+
+    // -------------------------------------------------------------------------
+    // 8. MARKDOWN PREVIEW RENDERER
+    // -------------------------------------------------------------------------
     function renderMarkdownPreview() {
-        const text = elements.inputShardContent.value;
+        const text = elements.inputNoteContent.value;
         let html = '';
-
         const lines = text.split('\n');
-        let inList = false;
 
-        lines.forEach((line, lineIdx) => {
-            // Task checkboxes: - [ ] or - [x]
-            const taskMatch = line.match(/^-\s*\[([ xX])\]\s*(.*)/);
-            if (taskMatch) {
-                const isChecked = taskMatch[1].toLowerCase() === 'x';
-                const taskText = taskMatch[2];
-                html += `
-                    <div class="cyber-checkbox-item ${isChecked ? 'checked' : ''}" data-line="${lineIdx}">
-                        <div class="cyber-checkbox-box">${isChecked ? '✓' : ''}</div>
-                        <span>${escapeHtml(taskText)}</span>
-                    </div>
-                `;
-                return;
-            }
-
-            // Headers
+        lines.forEach(line => {
             if (line.startsWith('### ')) {
                 html += `<h3>${escapeHtml(line.slice(4))}</h3>`;
             } else if (line.startsWith('## ')) {
@@ -374,122 +699,87 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        elements.shardMarkdownPreview.innerHTML = html;
-
-        // Wire interactive checkbox toggling
-        elements.shardMarkdownPreview.querySelectorAll('.cyber-checkbox-item').forEach(item => {
-            item.addEventListener('click', () => {
-                window.CyberSound.playCheck();
-                const lIdx = parseInt(item.dataset.line, 10);
-                const curLines = elements.inputShardContent.value.split('\n');
-                if (curLines[lIdx]) {
-                    if (curLines[lIdx].includes('- [ ]')) {
-                        curLines[lIdx] = curLines[lIdx].replace('- [ ]', '- [x]');
-                    } else if (curLines[lIdx].includes('- [x]') || curLines[lIdx].includes('- [X]')) {
-                        curLines[lIdx] = curLines[lIdx].replace(/- \[[xX]\]/, '- [ ]');
-                    }
-                    elements.inputShardContent.value = curLines.join('\n');
-                    saveCurrentShard();
-                    renderMarkdownPreview();
-                }
-            });
-        });
+        elements.noteMarkdownPreview.innerHTML = html;
     }
 
     function formatInlineMarkdown(str) {
         return str
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
-            .replace(/`(.*?)`/g, '<code>$1</code>');
+            .replace(/`([^`]+)`/g, '<code>$1</code>');
     }
 
     function escapeHtml(str) {
-        return str
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
     }
 
-    // =========================================================================
-    // 6. EVENT LISTENERS
-    // =========================================================================
-    elements.btnNewShard.addEventListener('click', () => {
-        window.CyberSound.playSuccess();
-        const created = window.NotesManager.createNote({
-            title: 'NEW_MISSION_LOG // ' + (new Date().toISOString().slice(0, 10)),
-            content: '- [ ] Mission Objective 1\n- [ ] Review intelligence parameters',
-            tags: [elements.selectShardTag.value || 'MISSION']
-        });
-        selectShard(created.id);
-        elements.inputShardTitle.focus();
+    elements.btnToggleView.addEventListener('click', () => {
+        window.soundEngine.playClick();
+        isPreviewMode = !isPreviewMode;
+
+        if (isPreviewMode) {
+            renderMarkdownPreview();
+            elements.inputNoteContent.style.display = 'none';
+            elements.noteMarkdownPreview.style.display = 'block';
+            elements.viewModeIcon.textContent = '✏';
+            elements.btnToggleView.classList.add('active');
+            elements.editorStatus.textContent = 'PREVIEW';
+        } else {
+            elements.inputNoteContent.style.display = 'block';
+            elements.noteMarkdownPreview.style.display = 'none';
+            elements.viewModeIcon.textContent = '👁';
+            elements.btnToggleView.classList.remove('active');
+            elements.editorStatus.textContent = 'EDIT';
+        }
     });
 
-    elements.inputShardTitle.addEventListener('input', scheduleAutoSave);
-    elements.inputShardContent.addEventListener('input', () => {
-        window.CyberSound.playKey();
+    // -------------------------------------------------------------------------
+    // 9. EVENT LISTENERS & USER ACTIONS
+    // -------------------------------------------------------------------------
+    elements.btnNewNote.addEventListener('click', () => {
+        window.soundEngine.playClick();
+        const newNote = window.notesManager.createNote({
+            title: 'New Note',
+            content: '',
+            checklist: []
+        });
+        selectNote(newNote.id);
+        elements.inputNoteTitle.focus();
+        elements.inputNoteTitle.select();
+    });
+
+    elements.btnTogglePin.addEventListener('click', () => {
+        window.soundEngine.playClick();
+        const currentId = window.notesManager.selectedNoteId;
+        if (!currentId) return;
+
+        const updated = window.notesManager.togglePin(currentId);
+        elements.pinIcon.textContent = updated.pinned ? '★' : '☆';
+        elements.btnTogglePin.classList.toggle('active', updated.pinned);
+        renderNotesList();
+    });
+
+    elements.priorityButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            window.soundEngine.playClick();
+            elements.priorityButtons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            const currentId = window.notesManager.selectedNoteId;
+            if (currentId) {
+                window.notesManager.updateNote(currentId, { priority: btn.dataset.priority });
+                renderNotesList();
+            }
+        });
+    });
+
+    elements.selectNoteTag.addEventListener('change', () => {
+        window.soundEngine.playClick();
         scheduleAutoSave();
     });
 
-    // Priority buttons
-    elements.priorityButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
-            window.CyberSound.playClick();
-            elements.priorityButtons.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            window.NotesManager.updateNote(window.NotesManager.selectedNoteId, { priority: btn.dataset.priority });
-            renderShardsList();
-        });
-    });
-
-    // Pin
-    elements.btnTogglePin.addEventListener('click', () => {
-        window.CyberSound.playClick();
-        window.NotesManager.togglePin(window.NotesManager.selectedNoteId);
-        const note = window.NotesManager.getNote(window.NotesManager.selectedNoteId);
-        if (note) {
-            elements.pinIcon.textContent = note.pinned ? '★' : '☆';
-            elements.btnTogglePin.classList.toggle('active', note.pinned);
-        }
-    });
-
-    // Toggle Preview
-    elements.btnToggleView.addEventListener('click', () => {
-        window.CyberSound.playClick();
-        isPreviewMode = !isPreviewMode;
-        if (isPreviewMode) {
-            renderMarkdownPreview();
-            elements.inputShardContent.style.display = 'none';
-            elements.shardMarkdownPreview.style.display = 'block';
-            elements.viewModeIcon.textContent = '✎';
-            elements.btnToggleView.querySelector('span:last-child').textContent = 'EDIT';
-        } else {
-            elements.inputShardContent.style.display = 'block';
-            elements.shardMarkdownPreview.style.display = 'none';
-            elements.viewModeIcon.textContent = '👁';
-            elements.btnToggleView.querySelector('span:last-child').textContent = 'PREVIEW';
-        }
-    });
-
-    // Delete
-    elements.btnDeleteShard.addEventListener('click', () => {
-        const note = window.NotesManager.getNote(window.NotesManager.selectedNoteId);
-        if (!note) return;
-        if (confirm(`PURGE SHARD: "${note.title}"?`)) {
-            window.CyberSound.playBuzzer();
-            window.NotesManager.deleteNote(note.id);
-            const remaining = window.NotesManager.getFilteredNotes();
-            if (remaining.length > 0) {
-                selectShard(remaining[0].id);
-            } else {
-                elements.inputShardTitle.value = '';
-                elements.inputShardContent.value = '';
-            }
-        }
-    });
-
-    // Alarm Checkbox Toggle
     elements.chkEnableAlarm.addEventListener('change', () => {
-        window.CyberSound.playClick();
+        window.soundEngine.playClick();
         elements.alarmConfigModule.style.display = elements.chkEnableAlarm.checked ? 'flex' : 'none';
         scheduleAutoSave();
     });
@@ -497,143 +787,175 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.inputAlarmDatetime.addEventListener('change', scheduleAutoSave);
     elements.selectAlarmSound.addEventListener('change', scheduleAutoSave);
     elements.selectAlarmRepeat.addEventListener('change', scheduleAutoSave);
-    elements.selectShardTag.addEventListener('change', scheduleAutoSave);
 
-    // Quick countdown timer buttons (+5m, +15m, +30m, +1h)
-    elements.quickTimers.forEach(btn => {
-        btn.addEventListener('click', () => {
-            window.CyberSound.playSuccess();
-            const minutes = parseInt(btn.dataset.timer, 10);
-            const targetTime = Date.now() + minutes * 60 * 1000;
-            const targetDate = new Date(targetTime);
+    elements.inputNoteTitle.addEventListener('input', scheduleAutoSave);
+    elements.inputNoteContent.addEventListener('input', scheduleAutoSave);
 
-            elements.chkEnableAlarm.checked = true;
-            elements.alarmConfigModule.style.display = 'flex';
+    // Delete Note
+    elements.btnDeleteNote.addEventListener('click', () => {
+        const currentId = window.notesManager.selectedNoteId;
+        if (!currentId) return;
 
-            const tzOffset = targetDate.getTimezoneOffset() * 60000;
-            elements.inputAlarmDatetime.value = (new Date(targetDate.getTime() - tzOffset)).toISOString().slice(0, 16);
+        window.soundEngine.playBuzzer();
+        window.notesManager.deleteNote(currentId);
 
-            saveCurrentShard();
-            alert(`⏰ CHRONO ALARM ACTIVATED: in ${minutes} minutes (${targetDate.toLocaleTimeString()})`);
-        });
-    });
-
-    // Custom Tag Prompt
-    elements.btnAddCustomTag.addEventListener('click', () => {
-        const newTag = prompt("ENTER NEW TAG IDENTIFIER (e.g. OPERATIONS):");
-        if (newTag) {
-            window.CyberSound.playSuccess();
-            window.NotesManager.addTag(newTag);
-            renderTags();
+        const all = window.notesManager.getFilteredNotes();
+        if (all.length > 0) {
+            selectNote(all[0].id);
+        } else {
+            elements.inputNoteTitle.value = '';
+            elements.inputNoteContent.value = '';
+            elements.checklistItemsList.replaceChildren();
+            elements.charCount.textContent = '0 CHARACTERS // 0 WORDS';
         }
+        renderNotesList();
     });
 
-    // Filters
-    elements.filterItems.forEach(item => {
-        item.addEventListener('click', () => {
-            window.CyberSound.playClick();
-            elements.filterItems.forEach(f => f.classList.remove('active'));
-            item.classList.add('active');
-            window.NotesManager.activeFilter.category = item.dataset.category;
-            renderShardsList();
-        });
-    });
-
-    // Search & Sort
-    elements.inputSearch.addEventListener('input', (e) => {
-        window.NotesManager.activeFilter.searchQuery = e.target.value;
-        renderShardsList();
-    });
-
-    elements.selectSort.addEventListener('change', (e) => {
-        window.CyberSound.playClick();
-        window.NotesManager.sortBy = e.target.value;
-        renderShardsList();
-    });
-
-    // Export .md
+    // Export single note as Markdown
     elements.btnExportMd.addEventListener('click', () => {
-        const note = window.NotesManager.getNote(window.NotesManager.selectedNoteId);
+        const note = window.notesManager.getNote(window.notesManager.selectedNoteId);
         if (!note) return;
-        window.CyberSound.playSuccess();
 
-        const fileContent = `# ${note.title}\n\nPriority: ${note.priority.toUpperCase()}\nTags: ${note.tags.join(', ')}\nDate: ${new Date(note.createdAt).toLocaleString()}\n\n${note.content}`;
-        const blob = new Blob([fileContent], { type: 'text/markdown;charset=utf-8' });
+        window.soundEngine.playSuccess();
+        let md = `# ${note.title}\n\n`;
+        if (note.checklist && note.checklist.length > 0) {
+            md += `### Tasks\n`;
+            note.checklist.forEach(t => {
+                md += `- [${t.done ? 'x' : ' '}] ${t.text}\n`;
+            });
+            md += `\n### Notes\n`;
+        }
+        md += note.content;
+
+        const blob = new Blob([md], { type: 'text/markdown' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = `${note.title.replace(/[^a-zA-Z0-9_-]/g, '_')}.md`;
-        document.body.appendChild(a);
         a.click();
-        document.body.removeChild(a);
         URL.revokeObjectURL(url);
     });
 
-    // =========================================================================
-    // 7. EMERGENCY ALARM MODAL HANDLING
-    // =========================================================================
-    window.CyberAlarm.onAlarmTriggered = (note) => {
-        elements.alarmModalTitle.textContent = `🚨 ${note.title}`;
-        elements.alarmModalDesc.textContent = note.content || 'Protocol schedule deadline arrived.';
+    // Backup & Restore Library
+    elements.btnExportAll.addEventListener('click', () => {
+        window.soundEngine.playSuccess();
+        window.notesManager.exportJSON();
+    });
+
+    // Left Sidebar Filter Categories
+    elements.filterItems.forEach(item => {
+        item.addEventListener('click', () => {
+            window.soundEngine.playClick();
+            elements.filterItems.forEach(i => i.classList.remove('active'));
+            item.classList.add('active');
+
+            window.notesManager.activeFilter.category = item.dataset.category;
+            renderNotesList();
+        });
+    });
+
+    // Quick Timers
+    elements.quickTimers.forEach(btn => {
+        btn.addEventListener('click', () => {
+            window.soundEngine.playSuccess();
+            const mins = parseInt(btn.dataset.timer, 10);
+            const target = Date.now() + mins * 60 * 1000;
+
+            const currentId = window.notesManager.selectedNoteId;
+            if (currentId) {
+                const note = window.notesManager.getNote(currentId);
+                const updatedAlarm = {
+                    enabled: true,
+                    timestamp: target,
+                    sound: 'siren',
+                    repeat: 'none',
+                    label: note.title,
+                    triggered: false
+                };
+                window.notesManager.updateNote(currentId, { alarm: updatedAlarm });
+                selectNote(currentId);
+            }
+        });
+    });
+
+    // Add Custom Tag
+    elements.btnAddCustomTag.addEventListener('click', () => {
+        const tag = prompt("Enter new tag name:");
+        if (tag) {
+            window.soundEngine.playClick();
+            window.notesManager.addCustomTag(tag);
+            renderTags();
+        }
+    });
+
+    // Search and Sort
+    elements.inputSearch.addEventListener('input', () => {
+        window.notesManager.activeFilter.searchQuery = elements.inputSearch.value.trim();
+        renderNotesList();
+    });
+
+    elements.selectSort.addEventListener('change', () => {
+        window.soundEngine.playClick();
+        window.notesManager.sortBy = elements.selectSort.value;
+        renderNotesList();
+    });
+
+    // -------------------------------------------------------------------------
+    // 10. ALARM ALERT MODAL ACTIONS
+    // -------------------------------------------------------------------------
+    window.alarmManager.onAlarmTriggered = (note) => {
+        elements.alarmModalTitle.textContent = note.title;
+        elements.alarmModalDesc.textContent = note.content ? note.content.slice(0, 160) : 'Reminder is due now.';
         elements.alarmModal.classList.add('active');
     };
 
-    window.CyberAlarm.onAlarmDismissed = () => {
+    window.alarmManager.onAlarmDismissed = () => {
         elements.alarmModal.classList.remove('active');
+        renderNotesList();
     };
 
-    elements.btnDismissAlarm.addEventListener('click', () => {
-        window.CyberSound.playClick();
-        window.CyberAlarm.dismissAlarm();
-        renderShardsList();
-    });
+    elements.btnSnooze5.addEventListener('click', () => window.alarmManager.snooze(5));
+    elements.btnSnooze15.addEventListener('click', () => window.alarmManager.snooze(15));
+    elements.btnDismissAlarm.addEventListener('click', () => window.alarmManager.dismiss());
 
-    elements.btnSnooze5.addEventListener('click', () => {
-        window.CyberSound.playClick();
-        window.CyberAlarm.snoozeAlarm(5);
-        renderShardsList();
-    });
-
-    elements.btnSnooze15.addEventListener('click', () => {
-        window.CyberSound.playClick();
-        window.CyberAlarm.snoozeAlarm(15);
-        renderShardsList();
-    });
-
-    // =========================================================================
-    // 8. KEYBOARD SHORTCUTS
-    // =========================================================================
-    window.addEventListener('keydown', (e) => {
-        // Ctrl + N: New Shard
+    // -------------------------------------------------------------------------
+    // 11. KEYBOARD SHORTCUTS
+    // -------------------------------------------------------------------------
+    document.addEventListener('keydown', (e) => {
+        // Ctrl+N: New note
         if (e.ctrlKey && e.key.toLowerCase() === 'n') {
             e.preventDefault();
-            elements.btnNewShard.click();
+            elements.btnNewNote.click();
         }
-        // Ctrl + S: Save
-        if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        // Ctrl+S: Instant save
+        else if (e.ctrlKey && e.key.toLowerCase() === 's') {
             e.preventDefault();
-            saveCurrentShard();
-            window.CyberSound.playSuccess();
+            saveCurrentNote();
+            window.soundEngine.playSuccess();
         }
-        // Escape: Dismiss active alarm or blur
-        if (e.key === 'Escape') {
+        // Ctrl+F: Search focus
+        else if (e.ctrlKey && e.key.toLowerCase() === 'f') {
+            e.preventDefault();
+            elements.inputSearch.focus();
+            elements.inputSearch.select();
+        }
+        // Escape: Close open modals
+        else if (e.key === 'Escape') {
             if (elements.alarmModal.classList.contains('active')) {
-                window.CyberAlarm.dismissAlarm();
+                window.alarmManager.dismiss();
             }
+            elements.modalTypingSettings.classList.remove('active');
+            elements.modalCustomTheme.classList.remove('active');
         }
     });
 
-    // Notes Manager update callback
-    window.NotesManager.onNotesChanged = () => {
-        renderShardsList();
-    };
-
-    // Initial Render
+    // -------------------------------------------------------------------------
+    // INITIAL BOOTSTRAP
+    // -------------------------------------------------------------------------
     renderTags();
-    const all = window.NotesManager.getFilteredNotes();
-    if (all.length > 0) {
-        selectShard(all[0].id);
-    } else {
-        elements.btnNewShard.click();
+    const initialNotes = window.notesManager.getAllNotes();
+    if (initialNotes.length > 0) {
+        selectNote(initialNotes[0].id);
     }
+    renderNotesList();
 });

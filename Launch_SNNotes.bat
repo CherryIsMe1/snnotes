@@ -1,9 +1,9 @@
 @echo off
-title Launching SNNOTES // SNAKE NATION...
+title Launching SNNOTES...
 cd /d "%~dp0"
 
 echo ===================================================
-echo   SNNOTES // SNAKE NATION NEURAL LOG ^& ALARMS
+echo   SNNOTES // NOTES, TASKS ^& ALARMS
 echo   Starting Windows Desktop Interface...
 echo ===================================================
 

@@ -1,6 +1,6 @@
-# SNNOTES // SNAKE NATION NEURAL LOG & ALARM MATRIX
+# SNNOTES
 
-A retro-futuristic Cyberpunk notes, task organizer, and chrono alarm desktop application for Windows, crafted with the same visual language and Web Audio API architecture as **SNDeck**.
+A cyberpunk companion notes, interactive checklist, and alarm application for Windows, crafted with the exact design system, themes, and Web Audio API architecture as **SNDeck**.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-00ff88?style=flat-square)
 ![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-b026ff?style=flat-square)
@@ -10,26 +10,31 @@ A retro-futuristic Cyberpunk notes, task organizer, and chrono alarm desktop app
 
 ## ⚡ Key Features
 
-- **Snake Nation Cyberpunk Aesthetic**: High-contrast dark theme (`#07090E`), angled chamfered cyber cuts, glowing neon accents (hot pink, purple, neon green, and cyber blue), and custom typography (Orbitron, Rajdhani, Share Tech Mono).
-- **Chrono Alarm & Reminder Engine**:
-  - Exact timestamp scheduling with customizable alarms.
-  - Repeating alarms (`Daily`, `Workdays`, `Weekly`).
+- **SNDeck Theme System**:
+  - Full support for SNDeck themes: **SN** (Default Cyberpunk), **ER** (Blue/Cyan), **BLOSSOM** (Pink/Rose), and **BASIC** (Monochrome Minimalist).
+  - Create and save **Custom Themes** with custom accent, secondary, and highlight color pickers.
+- **Retro CRT Scanline Filter**:
+  - Toggle the scanline overlay on/off via the **RETRO: ON / OFF** button in the top HUD (matching SNDeck).
+- **Keystroke Typing Audio (Sound Effects)**:
+  - Acoustic feedback on every keypress when writing notes, checklists, and search queries.
+  - Built-in sound profiles: `Mechanical Switch`, `Cyber Terminal`, `Typewriter`, `Soft Bubble`.
+  - **Custom Audio Support**: Upload your own `.mp3` or `.wav` sound file to use as your keystroke sound!
+  - Volume slider and quick ON/OFF toggles.
+- **Interactive Checklists & Tasks**:
+  - Dedicated interactive task list with animated checkboxes and strike-through styles.
+  - Live progress bar showing completed items and percentage (`4/6 (66%)`) in both the editor and note cards.
+  - Add tasks with the Enter key, delete tasks, and toggle task completion with sound.
+- **Alarm & Reminder System**:
+  - Schedule reminders with specific date and time.
+  - Recurring alarms (`Daily`, `Weekly`).
   - Quick Countdown Timers (`+5m`, `+15m`, `+30m`, `+1h`).
-  - Active Alarms countdown HUD ticker showing time remaining to the nearest reminder.
-  - Fullscreen Emergency Alarm HUD overlay with pulsing warnings, snooze (+5m, +15m), and dismiss protocols.
-  - Web Notification and native desktop notifications support.
-- **Web Audio API Sound Synthesizer**:
-  - 100% synthesized acoustic feedback (mechanical switch clicks, terminal keystroke blips, mission complete chimes).
-  - Multi-tone siren alarms (Cyber Siren, Tactical Pulse, Sonar Ping, Pitch Sweep). Zero external audio files required!
-- **Neural Data Shard Manager**:
-  - Interactive checklists (`- [ ] task` toggles into clickable cyber power cells with strike-through animations).
-  - Priority matrix: `LOW` (Green), `MED` (Yellow), `HIGH / URGENT` (Hot Pink).
-  - Tag indexing (`#MISSION`, `#INTEL`, `#PERSONAL`, `#SYSTEM`, `#CORPO` + custom tags).
-  - Pinning / Favoriting shards.
-  - Real-time search across titles, content, and tags.
-  - Markdown preview toggle.
-  - Export shards as `.md` markdown files.
-  - 100% offline local storage persistence.
+  - Live HUD ticker showing time remaining until the next active alarm.
+  - Emergency Alarm overlay with sound siren, snooze (+5m, +15m), and dismiss.
+- **QOL & Offline Storage**:
+  - Live HUD clock (`HH:MM:SS`).
+  - Instant backup and restore: export/import your entire library as JSON.
+  - Export individual notes as clean Markdown (`.md`).
+  - 100% offline local storage on Windows.
 
 ---
 
@@ -37,15 +42,16 @@ A retro-futuristic Cyberpunk notes, task organizer, and chrono alarm desktop app
 
 | Shortcut | Action |
 | :--- | :--- |
-| `Ctrl + N` | Initialize new Data Shard |
-| `Ctrl + S` | Force encrypted save |
-| `Escape` | Dismiss active alarm / close overlays |
+| `Ctrl + N` | Create new note |
+| `Ctrl + S` | Save note immediately |
+| `Ctrl + F` | Focus search bar |
+| `Escape` | Close modals / dismiss alarm |
 
 ---
 
 ## 🚀 Quick Launch on Windows
 
-Double-click `Launch_SNNotes.bat` to instantly launch the application in standalone desktop app window mode (Edge/Chromium).
+Double-click `Launch_SNNotes.bat` to instantly launch the application in standalone desktop window mode.
 
 ---
 
@@ -58,18 +64,11 @@ The repository includes a ready-to-use GitHub Actions workflow (`.github/workflo
    git add -A
    git commit -m "feat: SNNotes v1.0.0"
    git remote add origin https://github.com/YOUR_USERNAME/snnotes.git
-   git branch -M main
    git push -u origin main
    ```
-2. Trigger the automated Windows release build:
+2. Trigger the automated release:
    ```bash
-   git tag -f v1.0.0
+   git tag v1.0.0
    git push origin v1.0.0
    ```
-3. GitHub Actions will automatically compile the Rust Tauri backend and generate signed Windows `.msi` and `.exe` installers in your GitHub Releases tab!
-
----
-
-## 🛡️ License
-
-MIT License. Designed and built with futuristic cyberdeck protocols by Snake Nation.
+   GitHub Actions will automatically build and publish Windows `.msi` and `.exe` installers in your GitHub Releases.
