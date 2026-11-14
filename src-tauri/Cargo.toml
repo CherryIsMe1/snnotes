@@ -1,12 +1,12 @@
 [package]
-name = "cyberdeck-notes"
+name = "snnotes"
 version = "1.0.0"
-description = "CyberDeck Neural Notes & Chrono Alarm Matrix"
+description = "Snake Nation SNNotes // Neural Notes & Chrono Alarm Matrix"
 authors = ["Snake Nation"]
 edition = "2021"
 
 [lib]
-name = "cyberdeck_notes_lib"
+name = "snnotes_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

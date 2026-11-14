@@ -1,9 +1,9 @@
 @echo off
-title Launching CYBERDECK // NEURAL LOG...
+title Launching SNNOTES // SNAKE NATION...
 cd /d "%~dp0"
 
 echo ===================================================
-echo   CYBERDECK // NEURAL NOTES ^& ALARM MATRIX
+echo   SNNOTES // SNAKE NATION NEURAL LOG ^& ALARMS
 echo   Starting Windows Desktop Interface...
 echo ===================================================
 

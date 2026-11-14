@@ -1,4 +1,4 @@
-# CYBERDECK // NEURAL LOG & ALARM MATRIX
+# SNNOTES // SNAKE NATION NEURAL LOG & ALARM MATRIX
 
 A retro-futuristic Cyberpunk notes, task organizer, and chrono alarm desktop application for Windows, crafted with the same visual language and Web Audio API architecture as **SNDeck**.
 
@@ -10,7 +10,7 @@ A retro-futuristic Cyberpunk notes, task organizer, and chrono alarm desktop app
 
 ## ⚡ Key Features
 
-- **Cyberpunk Netrunner Aesthetic**: High-contrast dark theme (`#07090E`), angled chamfered cyber cuts, glowing neon accents (hot pink, purple, neon green, and cyber blue), and custom typography (Orbitron, Rajdhani, Share Tech Mono).
+- **Snake Nation Cyberpunk Aesthetic**: High-contrast dark theme (`#07090E`), angled chamfered cyber cuts, glowing neon accents (hot pink, purple, neon green, and cyber blue), and custom typography (Orbitron, Rajdhani, Share Tech Mono).
 - **Chrono Alarm & Reminder Engine**:
   - Exact timestamp scheduling with customizable alarms.
   - Repeating alarms (`Daily`, `Workdays`, `Weekly`).
@@ -45,7 +45,7 @@ A retro-futuristic Cyberpunk notes, task organizer, and chrono alarm desktop app
 
 ## 🚀 Quick Launch on Windows
 
-Double-click `Launch_CyberNotes.bat` to instantly launch the application in standalone desktop app window mode (Edge/Chromium).
+Double-click `Launch_SNNotes.bat` to instantly launch the application in standalone desktop app window mode (Edge/Chromium).
 
 ---
 
@@ -55,16 +55,15 @@ The repository includes a ready-to-use GitHub Actions workflow (`.github/workflo
 
 1. Push your repository to GitHub:
    ```bash
-   git init
-   git add .
-   git commit -m "feat: initial CyberNotes release v1.0.0"
-   git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+   git add -A
+   git commit -m "feat: SNNotes v1.0.0"
+   git remote add origin https://github.com/YOUR_USERNAME/snnotes.git
    git branch -M main
    git push -u origin main
    ```
 2. Trigger the automated Windows release build:
    ```bash
-   git tag v1.0.0
+   git tag -f v1.0.0
    git push origin v1.0.0
    ```
 3. GitHub Actions will automatically compile the Rust Tauri backend and generate signed Windows `.msi` and `.exe` installers in your GitHub Releases tab!

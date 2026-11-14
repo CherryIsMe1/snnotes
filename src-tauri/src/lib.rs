@@ -2,7 +2,7 @@ use tauri::Manager;
 
 #[tauri::command]
 fn trigger_system_alarm(app: tauri::AppHandle, title: String, message: String) -> Result<(), String> {
-    println!("[CyberNotes] Alarm Triggered: {} - {}", title, message);
+    println!("[SNNotes] Alarm Triggered: {} - {}", title, message);
     
     // Attempt window focus/unminimize so user sees the alarm immediately
     if let Some(window) = app.get_webview_window("main") {
@@ -24,5 +24,5 @@ pub fn run() {
             trigger_system_alarm
         ])
         .run(tauri::generate_context!())
-        .expect("error while running CyberDeck Notes");
+        .expect("error while running SNNotes");
 }

@@ -1,12 +1,15 @@
 {
-  "name": "cyberdeck-notes",
+  "name": "snnotes",
   "version": "1.0.0",
-  "description": "CyberDeck Neural Notes & Chrono Alarm Matrix for Windows",
+  "description": "Snake Nation SNNotes // Neural Notes & Chrono Alarm Matrix for Windows",
   "main": "index.html",
   "scripts": {
     "tauri": "tauri"
   },
   "keywords": [
+    "snnotes",
+    "sndeck",
+    "snake-nation",
     "cyberpunk",
     "notes",
     "reminders",

@@ -1,4 +1,4 @@
-name: CyberNotes Windows Build and Release
+name: SNNotes Windows Build and Release
 
 on:
   push:
@@ -26,7 +26,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name || 'v1.0.0' }}
-          releaseName: 'CyberNotes ${{ github.ref_name || 'v1.0.0' }}'
-          releaseBody: 'CyberNotes Windows release: .msi and NSIS .exe installers. Standalone cyberpunk neural notes organizer with chrono alarms and synthesized SFX.'
+          releaseName: 'SNNotes ${{ github.ref_name || 'v1.0.0' }}'
+          releaseBody: 'Snake Nation SNNotes Windows release: .msi and NSIS .exe installers. Neural notes organizer with chrono alarms and synthesized SFX.'
           releaseDraft: false
           prerelease: false
