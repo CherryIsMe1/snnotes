@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CYBERDECK // NEURAL LOG & ALARM MATRIX</title>
+    <link rel="stylesheet" href="css/cyber-theme.css">
+</head>
+<body>
+    <!-- Subtle retro-futuristic monitor scanline overlay -->
+    <div class="scanlines-overlay"></div>
+
+    <div id="appLayout">
+        <!-- ================================================================
+             TOP DECK HUD BAR
+             ================================================================ -->
+        <header class="top-hud">
+            <div class="hud-left">
+                <div class="hud-logo">
+                    <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+                    <span>CYBERNOTES</span>
+                </div>
+                <div class="hud-sublogo">NEURAL LOG // V1.0.0</div>
+            </div>
+
+            <div class="hud-center">
+                <div class="hud-alarm-ticker" id="hudAlarmTicker">
+                    <span class="radar-dot"></span>
+                    <span id="alarmTickerText">CHRONO: SCANNING ALARMS...</span>
+                </div>
+            </div>
+
+            <div class="hud-right">
+                <button class="btn-hud active" id="btnToggleSound" title="Toggle Synthesizer SFX">
+                    <span>SFX: ON</span>
+                </button>
+                <div class="hud-clock" id="hudClock">00:00:00</div>
+            </div>
+        </header>
+
+        <!-- ================================================================
+             MAIN 3-COLUMN WORKSPACE
+             ================================================================ -->
+        <main class="main-workspace">
+            <!-- 1. LEFT SIDEBAR: DIRECTORY & FILTERS -->
+            <aside class="sidebar-left">
+                <button class="btn-cyber-primary cyber-cut-sm" id="btnNewShard">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                    <span>NEW DATA SHARD</span>
+                </button>
+
+                <div>
+                    <div class="sidebar-section-title">
+                        <span>FILTERS</span>
+                    </div>
+                    <div class="filter-list">
+                        <div class="filter-item active" data-category="all">
+                            <span>ALL SHARDS</span>
+                            <span class="filter-count" id="countAll">0</span>
+                        </div>
+                        <div class="filter-item" data-category="pinned">
+                            <span>PINNED // STARRED</span>
+                            <span class="filter-count" id="countPinned">0</span>
+                        </div>
+                        <div class="filter-item" data-category="urgent">
+                            <span>URGENT // HIGH</span>
+                            <span class="filter-count" id="countUrgent">0</span>
+                        </div>
+                        <div class="filter-item" data-category="alarm">
+                            <span>ACTIVE ALARMS</span>
+                            <span class="filter-count" id="countAlarms">0</span>
+                        </div>
+                        <div class="filter-item" data-category="completed">
+                            <span>ARCHIVED // DONE</span>
+                            <span class="filter-count" id="countCompleted">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="sidebar-section-title">
+                        <span>QUICK TIMERS</span>
+                    </div>
+                    <div class="quick-timers-grid">
+                        <button class="btn-quick-timer cyber-cut-sm" data-timer="5">+5 MIN</button>
+                        <button class="btn-quick-timer cyber-cut-sm" data-timer="15">+15 MIN</button>
+                        <button class="btn-quick-timer cyber-cut-sm" data-timer="30">+30 MIN</button>
+                        <button class="btn-quick-timer cyber-cut-sm" data-timer="60">+1 HOUR</button>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="sidebar-section-title">
+                        <span>TAGS</span>
+                        <span id="btnAddCustomTag" style="cursor: pointer; font-size: 14px;" title="Add custom tag">+</span>
+                    </div>
+                    <div class="tags-cloud" id="tagsCloud">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </aside>
+
+            <!-- 2. CENTER PANEL: SHARD EDITOR & ALARM MODULE -->
+            <section class="editor-center">
+                <div class="editor-header-bar">
+                    <div class="editor-mode-indicator" id="editorStatus">READY // LOCAL STORAGE SYNCED</div>
+                    <div class="editor-actions">
+                        <button class="btn-editor-action" id="btnTogglePin" title="Pin note to top">
+                            <span id="pinIcon">☆</span> PIN
+                        </button>
+                        <button class="btn-editor-action" id="btnToggleView" title="Toggle Markdown Preview">
+                            <span id="viewModeIcon">👁</span> PREVIEW
+                        </button>
+                        <button class="btn-editor-action" id="btnExportMd" title="Export as Markdown">
+                            <span>⬇</span> EXPORT
+                        </button>
+                        <button class="btn-editor-action btn-editor-delete" id="btnDeleteShard" title="Delete this note">
+                            <span>✕</span> DELETE
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Title Input -->
+                <input type="text" class="shard-title-input" id="inputShardTitle" placeholder="SHARD_TITLE // ENTER IDENTIFIER..." spellcheck="false">
+
+                <!-- Metadata Row (Priority, Tags) -->
+                <div class="shard-meta-bar cyber-cut-sm">
+                    <div class="meta-group">
+                        <span class="meta-label">PRIORITY:</span>
+                        <div class="priority-selector">
+                            <button class="btn-priority" data-priority="low">LOW</button>
+                            <button class="btn-priority active" data-priority="med">MED</button>
+                            <button class="btn-priority" data-priority="high">HIGH</button>
+                        </div>
+                    </div>
+
+                    <div class="meta-group">
+                        <span class="meta-label">TAG:</span>
+                        <select class="alarm-input" id="selectShardTag">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+
+                    <div class="meta-group" style="margin-left: auto;">
+                        <label class="alarm-toggle-switch">
+                            <input type="checkbox" id="chkEnableAlarm">
+                            <span style="color: var(--omi-purple); font-weight: bold;">ENABLE ALARM</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Alarm Configuration Drawer (Collapsible) -->
+                <div class="alarm-config-module cyber-cut-sm" id="alarmConfigModule" style="display: none;">
+                    <div class="alarm-config-header">
+                        <span class="alarm-config-title">
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+                            CHRONO ALARM TRIGGER PARAMETERS
+                        </span>
+                        <span id="alarmTimeDisplay" style="font-family: var(--font-mono); font-size: 11px; color: var(--omi-yellow);"></span>
+                    </div>
+                    <div class="alarm-fields-row">
+                        <div>
+                            <span class="meta-label">DATE & TIME: </span>
+                            <input type="datetime-local" class="alarm-input" id="inputAlarmDatetime">
+                        </div>
+                        <div>
+                            <span class="meta-label">SOUND: </span>
+                            <select class="alarm-input" id="selectAlarmSound">
+                                <option value="siren">CYBER SIREN</option>
+                                <option value="pulse">TACTICAL PULSE</option>
+                                <option value="ping">SONAR PING</option>
+                                <option value="cyber">PITCH SWEEP</option>
+                            </select>
+                        </div>
+                        <div>
+                            <span class="meta-label">REPEAT: </span>
+                            <select class="alarm-input" id="selectAlarmRepeat">
+                                <option value="none">NONE (ONCE)</option>
+                                <option value="daily">DAILY</option>
+                                <option value="workdays">WORKDAYS</option>
+                                <option value="weekly">WEEKLY</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Content Area -->
+                <div class="content-wrapper">
+                    <textarea class="shard-content-textarea cyber-cut-sm" id="inputShardContent" placeholder="Enter note briefing, markdown or checklist tasks (e.g. - [ ] item)..." spellcheck="false"></textarea>
+                    <div class="shard-markdown-preview cyber-cut-sm" id="shardMarkdownPreview"></div>
+                </div>
+
+                <!-- Footer Status -->
+                <div class="editor-footer">
+                    <span id="charCount">0 CHARACTERS // 0 WORDS</span>
+                    <span id="saveStatus">AUTO-SAVED</span>
+                </div>
+            </section>
+
+            <!-- 3. RIGHT PANEL: NEURAL SHARDS DIRECTORY / CARDS -->
+            <aside class="sidebar-right">
+                <div class="directory-header">
+                    <div class="search-box">
+                        <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                        <input type="text" class="search-input cyber-cut-sm" id="inputSearch" placeholder="SEARCH SHARDS OR #TAG...">
+                    </div>
+                    <div class="sort-row">
+                        <span>SORT BY:</span>
+                        <select class="sort-select" id="selectSort">
+                            <option value="updated-desc">RECENTLY UPDATED</option>
+                            <option value="alarm-asc">NEXT ALARM</option>
+                            <option value="priority-desc">HIGHEST PRIORITY</option>
+                            <option value="created-desc">CREATION DATE</option>
+                            <option value="title-asc">NAME (A-Z)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="shards-scroll-list" id="shardsList">
+                    <!-- Populated by JS -->
+                </div>
+            </aside>
+        </main>
+    </div>
+
+    <!-- ====================================================================
+         FULLSCREEN EMERGENCY ALARM ALERT HUD MODAL
+         ==================================================================== -->
+    <div class="alarm-overlay-hud" id="alarmModal">
+        <div class="alarm-alert-box cyber-cut">
+            <div class="alarm-banner-header">
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                <span>CHRONO ALARM TRIGGERED</span>
+                <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+            </div>
+
+            <div class="alarm-target-title" id="alarmModalTitle">PROTOCOL ALERT</div>
+            <div class="alarm-target-desc" id="alarmModalDesc">Reminder details...</div>
+
+            <div class="alarm-hud-actions">
+                <button class="btn-alarm-snooze cyber-cut-sm" id="btnSnooze5">SNOOZE +5M</button>
+                <button class="btn-alarm-snooze cyber-cut-sm" id="btnSnooze15">SNOOZE +15M</button>
+                <button class="btn-alarm-dismiss cyber-cut-sm" id="btnDismissAlarm">DISMISS ALARM</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script Modules -->
+    <script src="js/sound-engine.js"></script>
+    <script src="js/alarm-manager.js"></script>
+    <script src="js/notes-manager.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

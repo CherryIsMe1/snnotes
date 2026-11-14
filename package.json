@@ -1,0 +1,19 @@
+{
+  "name": "cyberdeck-notes",
+  "version": "1.0.0",
+  "description": "CyberDeck Neural Notes & Chrono Alarm Matrix for Windows",
+  "main": "index.html",
+  "scripts": {
+    "tauri": "tauri"
+  },
+  "keywords": [
+    "cyberpunk",
+    "notes",
+    "reminders",
+    "alarm",
+    "tauri",
+    "windows"
+  ],
+  "author": "Snake Nation",
+  "license": "MIT"
+}

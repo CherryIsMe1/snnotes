@@ -1,0 +1,45 @@
+{
+  "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/tooling/cli/schema.json",
+  "productName": "CyberNotes",
+  "version": "1.0.0",
+  "identifier": "com.snakenation.cybernotes",
+  "build": {
+    "frontendDist": "../"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "title": "CYBERDECK // NEURAL LOG & ALARM MATRIX",
+        "width": 1280,
+        "height": 840,
+        "minWidth": 900,
+        "minHeight": 620,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "transparent": false,
+        "backgroundColor": "#07090E"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": [
+      "nsis",
+      "msi"
+    ],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/icon.png",
+      "icons/icon.ico"
+    ],
+    "category": "Productivity",
+    "shortDescription": "CyberDeck Neural Notes and Chrono Alarm Matrix",
+    "longDescription": "Cyberpunk-themed notes, task organizer, and audio alarm system inspired by SNDeck."
+  }
+}
