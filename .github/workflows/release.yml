@@ -13,6 +13,8 @@ jobs:
   build-windows:
     name: Build Windows installers and create release
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -25,8 +27,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_name || 'v1.0.0' }}
-          releaseName: 'SNNotes ${{ github.ref_name || 'v1.0.0' }}'
-          releaseBody: 'Snake Nation SNNotes Windows release: .msi and NSIS .exe installers. Neural notes organizer with chrono alarms and synthesized SFX.'
+          tagName: ${{ github.ref_name }}
+          releaseName: "SNNotes ${{ github.ref_name }}"
+          releaseBody: "SNNotes Windows release: .msi and NSIS .exe installers."
           releaseDraft: false
           prerelease: false

@@ -10,7 +10,7 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "SNNOTES // SNAKE NATION NEURAL LOG",
+        "title": "SNNOTES",
         "width": 1280,
         "height": 840,
         "minWidth": 900,
@@ -39,7 +39,7 @@
       "icons/icon.ico"
     ],
     "category": "Productivity",
-    "shortDescription": "Snake Nation SNNotes neural log and chrono alarm matrix",
-    "longDescription": "Cyberpunk-themed notes, task organizer, and audio alarm system inspired by SNDeck."
+    "shortDescription": "SNNotes cyberpunk notes, checklists, and alarms",
+    "longDescription": "Cyberpunk-themed notes, interactive checklists, and audio alarm system inspired by SNDeck."
   }
 }
