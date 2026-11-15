@@ -22,6 +22,14 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
+      - name: Sync web assets
+        shell: bash
+        run: |
+          mkdir -p www
+          cp -f index.html www/
+          cp -rf css www/
+          cp -rf js www/
+
       - name: Build Tauri Windows application
         uses: tauri-apps/tauri-action@v0
         env:
