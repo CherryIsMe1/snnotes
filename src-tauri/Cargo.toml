@@ -1,7 +1,7 @@
 [package]
 name = "snnotes"
-version = "1.0.0"
-description = "Snake Nation SNNotes // Neural Notes & Chrono Alarm Matrix"
+version = "1.1.1"
+description = "SNNotes cyberpunk notes, tasks and alarms"
 authors = ["Snake Nation"]
 edition = "2021"
 

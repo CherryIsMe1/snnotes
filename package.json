@@ -1,7 +1,7 @@
 {
   "name": "snnotes",
-  "version": "1.0.0",
-  "description": "Snake Nation SNNotes // Neural Notes & Chrono Alarm Matrix for Windows",
+  "version": "1.1.1",
+  "description": "SNNotes // Cyberpunk Notes, Tasks and Alarms for Windows",
   "main": "index.html",
   "scripts": {
     "tauri": "tauri"
