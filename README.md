@@ -49,12 +49,6 @@ A cyberpunk companion notes, interactive checklist, and alarm application for Wi
 
 ---
 
-## 🚀 Quick Launch on Windows
-
-Double-click `Launch_SNNotes.bat` to instantly launch the application in standalone desktop window mode.
-
----
-
 ## 📦 Building Windows Installers (.msi / .exe) with GitHub Actions
 
 The repository includes a ready-to-use GitHub Actions workflow (`.github/workflows/release.yml`).
