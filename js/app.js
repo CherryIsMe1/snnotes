@@ -1,7 +1,7 @@
 /**
  * SNNOTES // MAIN APPLICATION CONTROLLER
  * Manages themes, retro CRT scanline toggle, keystroke audio, interactive checklists,
- * alarms, markdown preview, hotkeys, and note storage.
+ * alarms, markdown preview & formatting, hotkeys, deletion confirmation, and planner integration.
  */
 document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
@@ -65,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
         noteMarkdownPreview: document.getElementById('noteMarkdownPreview'),
         charCount: document.getElementById('charCount'),
         saveStatus: document.getElementById('saveStatus'),
+        formatButtons: document.querySelectorAll('.btn-format'),
 
         // Right Sidebar
         inputSearch: document.getElementById('inputSearch'),
@@ -92,6 +93,11 @@ document.addEventListener('DOMContentLoaded', () => {
         colorThemeGreen: document.getElementById('colorThemeGreen'),
         colorThemeBlue: document.getElementById('colorThemeBlue'),
         colorThemePink: document.getElementById('colorThemePink'),
+
+        modalConfirmDelete: document.getElementById('modalConfirmDelete'),
+        deleteConfirmMessage: document.getElementById('deleteConfirmMessage'),
+        btnCancelDelete: document.getElementById('btnCancelDelete'),
+        btnConfirmDelete: document.getElementById('btnConfirmDelete'),
 
         alarmModal: document.getElementById('alarmModal'),
         alarmModalTitle: document.getElementById('alarmModalTitle'),
@@ -234,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // 3. RETRO SCANLINE CRT FILTER TOGGLE (Like in SNDeck)
     // -------------------------------------------------------------------------
     const savedRetro = localStorage.getItem('snnotes_retro_effect');
-    const isRetroActive = savedRetro !== 'false'; // default to true
+    const isRetroActive = savedRetro !== 'false';
     if (!isRetroActive) {
         elements.scanlines.classList.add('disabled');
         elements.btnToggleRetro.classList.remove('active');
@@ -244,7 +250,6 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.btnToggleRetro.addEventListener('click', () => {
         window.soundEngine.playClick();
         const active = elements.scanlines.classList.toggle('disabled');
-        // When .disabled is present, scanline is OFF
         const currentlyOn = !active;
         elements.btnToggleRetro.classList.toggle('active', currentlyOn);
         elements.btnToggleRetro.querySelector('span').textContent = currentlyOn ? 'RETRO: ON' : 'RETRO: OFF';
@@ -301,7 +306,6 @@ document.addEventListener('DOMContentLoaded', () => {
             se.playTypingSound();
         });
 
-        // Custom audio upload button
         elements.btnUploadCustomAudio.addEventListener('click', () => {
             elements.inputCustomAudioFile.click();
         });
@@ -319,7 +323,6 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Attach typing sound listeners to all interactive inputs
         const typingTargets = [
             elements.inputNoteTitle,
             elements.inputNoteContent,
@@ -330,7 +333,6 @@ document.addEventListener('DOMContentLoaded', () => {
         typingTargets.forEach(el => {
             if (!el) return;
             el.addEventListener('keydown', (e) => {
-                // Ignore modifier keys alone
                 if (['Control', 'Shift', 'Alt', 'Meta', 'CapsLock'].includes(e.key)) return;
                 window.soundEngine.playTypingSound();
             });
@@ -340,7 +342,115 @@ document.addEventListener('DOMContentLoaded', () => {
     initTypingAudioUI();
 
     // -------------------------------------------------------------------------
-    // 5. NOTES DIRECTORY & NOTE CARDS
+    // 5. MARKDOWN FORMATTING SYSTEM (Ctrl+B, Ctrl+I, Ctrl+U, Toolbar)
+    // -------------------------------------------------------------------------
+    function applyMarkdownFormat(format) {
+        const textarea = elements.inputNoteContent;
+        if (!textarea) return;
+
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+
+        let prefix = '';
+        let suffix = '';
+        let defaultText = '';
+
+        switch (format) {
+            case 'bold':
+                prefix = '**';
+                suffix = '**';
+                defaultText = 'bold text';
+                break;
+            case 'italic':
+                prefix = '*';
+                suffix = '*';
+                defaultText = 'italic text';
+                break;
+            case 'strike':
+                prefix = '~~';
+                suffix = '~~';
+                defaultText = 'strikethrough';
+                break;
+            case 'h1':
+                prefix = '# ';
+                suffix = '';
+                defaultText = 'Heading 1';
+                break;
+            case 'h2':
+                prefix = '## ';
+                suffix = '';
+                defaultText = 'Heading 2';
+                break;
+            case 'bullet':
+                prefix = '- ';
+                suffix = '';
+                defaultText = 'List item';
+                break;
+            case 'task':
+                prefix = '- [ ] ';
+                suffix = '';
+                defaultText = 'New task';
+                break;
+            case 'code':
+                prefix = '`';
+                suffix = '`';
+                defaultText = 'code';
+                break;
+            case 'quote':
+                prefix = '> ';
+                suffix = '';
+                defaultText = 'Quote';
+                break;
+            case 'link':
+                prefix = '[';
+                suffix = '](https://)';
+                defaultText = selectedText || 'link text';
+                break;
+        }
+
+        const replacement = selectedText ? (prefix + selectedText + suffix) : (prefix + defaultText + suffix);
+
+        textarea.focus();
+        textarea.setRangeText(replacement, start, end, 'select');
+
+        if (!selectedText) {
+            textarea.setSelectionRange(start + prefix.length, start + prefix.length + defaultText.length);
+        }
+
+        window.soundEngine.playClick();
+        scheduleAutoSave();
+    }
+
+    // Attach toolbar button actions
+    elements.formatButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const action = btn.dataset.action;
+            if (action) applyMarkdownFormat(action);
+        });
+    });
+
+    // Keyboard shortcuts for textarea
+    elements.inputNoteContent.addEventListener('keydown', (e) => {
+        if (e.ctrlKey) {
+            if (e.key.toLowerCase() === 'b') {
+                e.preventDefault();
+                applyMarkdownFormat('bold');
+            } else if (e.key.toLowerCase() === 'i') {
+                e.preventDefault();
+                applyMarkdownFormat('italic');
+            } else if (e.key.toLowerCase() === 'u') {
+                e.preventDefault();
+                applyMarkdownFormat('strike');
+            } else if (e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                applyMarkdownFormat('link');
+            }
+        }
+    });
+
+    // -------------------------------------------------------------------------
+    // 6. NOTES DIRECTORY & NOTE CARDS
     // -------------------------------------------------------------------------
     function renderNotesList() {
         const list = window.notesManager.getFilteredNotes();
@@ -379,13 +489,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             card.appendChild(topRow);
 
-            // Preview
             const preview = document.createElement('div');
             preview.className = 'card-preview';
             preview.textContent = note.content.replace(/[#*`[\]]/g, '').slice(0, 110) || '(Empty note)';
             card.appendChild(preview);
 
-            // Checklist progress bar on card
             const stats = window.notesManager.getChecklistStats(note);
             if (stats.total > 0) {
                 const progressDiv = document.createElement('div');
@@ -397,7 +505,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 card.appendChild(progressDiv);
             }
 
-            // Bottom row (Tags + Alarm)
             const bottomRow = document.createElement('div');
             bottomRow.className = 'card-bottom-row';
 
@@ -470,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
-    // 6. EDITOR POPULATION & BINDINGS
+    // 7. EDITOR POPULATION & BINDINGS
     // -------------------------------------------------------------------------
     function selectNote(id) {
         window.notesManager.selectedNoteId = id;
@@ -480,21 +587,17 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.inputNoteTitle.value = note.title || '';
         elements.inputNoteContent.value = note.content || '';
 
-        // Priority Buttons
         elements.priorityButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.priority === note.priority);
         });
 
-        // Pin Button
         elements.pinIcon.textContent = note.pinned ? '★' : '☆';
         elements.btnTogglePin.classList.toggle('active', note.pinned);
 
-        // Tag
         if (note.tags && note.tags.length > 0) {
             elements.selectNoteTag.value = note.tags[0];
         }
 
-        // Alarm Module
         if (note.alarm && note.alarm.enabled) {
             elements.chkEnableAlarm.checked = true;
             elements.alarmConfigModule.style.display = 'flex';
@@ -576,6 +679,11 @@ document.addEventListener('DOMContentLoaded', () => {
         elements.saveStatus.textContent = 'SAVED';
         elements.saveStatus.style.color = 'var(--omi-green)';
         updateCharCount();
+
+        if (window.cyberPlanner && window.cyberPlanner.activeView === 'planner') {
+            window.cyberPlanner.renderCalendar();
+            window.cyberPlanner.renderAgenda();
+        }
     }
 
     function updateCharCount() {
@@ -586,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // -------------------------------------------------------------------------
-    // 7. INTERACTIVE CHECKLIST LOGIC
+    // 8. INTERACTIVE CHECKLIST LOGIC
     // -------------------------------------------------------------------------
     function renderChecklist(note) {
         if (!note) return;
@@ -667,7 +775,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Toggle Checklist visibility
     elements.btnToggleChecklist.addEventListener('click', () => {
         window.soundEngine.playClick();
         isChecklistVisible = !isChecklistVisible;
@@ -676,7 +783,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -------------------------------------------------------------------------
-    // 8. MARKDOWN PREVIEW RENDERER
+    // 9. MARKDOWN PREVIEW RENDERER
     // -------------------------------------------------------------------------
     function renderMarkdownPreview() {
         const text = elements.inputNoteContent.value;
@@ -706,6 +813,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return str
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
             .replace(/\*(.*?)\*/g, '<em>$1</em>')
+            .replace(/~~(.*?)~~/g, '<del>$1</del>')
             .replace(/`([^`]+)`/g, '<code>$1</code>');
     }
 
@@ -734,7 +842,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -------------------------------------------------------------------------
-    // 9. EVENT LISTENERS & USER ACTIONS
+    // 10. EVENT LISTENERS & USER ACTIONS
     // -------------------------------------------------------------------------
     elements.btnNewNote.addEventListener('click', () => {
         window.soundEngine.playClick();
@@ -791,13 +899,31 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.inputNoteTitle.addEventListener('input', scheduleAutoSave);
     elements.inputNoteContent.addEventListener('input', scheduleAutoSave);
 
-    // Delete Note
+    // Delete Note (With Confirmation Modal!)
     elements.btnDeleteNote.addEventListener('click', () => {
         const currentId = window.notesManager.selectedNoteId;
         if (!currentId) return;
 
+        const note = window.notesManager.getNote(currentId);
+        const title = note ? note.title : 'this note';
+
+        elements.deleteConfirmMessage.textContent = `Are you sure you want to delete "${title}"? This action cannot be undone.`;
+        elements.modalConfirmDelete.classList.add('active');
         window.soundEngine.playBuzzer();
+    });
+
+    elements.btnCancelDelete.addEventListener('click', () => {
+        elements.modalConfirmDelete.classList.remove('active');
+        window.soundEngine.playClick();
+    });
+
+    elements.btnConfirmDelete.addEventListener('click', () => {
+        elements.modalConfirmDelete.classList.remove('active');
+        const currentId = window.notesManager.selectedNoteId;
+        if (!currentId) return;
+
         window.notesManager.deleteNote(currentId);
+        window.soundEngine.playBuzzer();
 
         const all = window.notesManager.getFilteredNotes();
         if (all.length > 0) {
@@ -809,6 +935,11 @@ document.addEventListener('DOMContentLoaded', () => {
             elements.charCount.textContent = '0 CHARACTERS // 0 WORDS';
         }
         renderNotesList();
+
+        if (window.cyberPlanner) {
+            window.cyberPlanner.renderCalendar();
+            window.cyberPlanner.renderAgenda();
+        }
     });
 
     // Export single note as Markdown
@@ -901,7 +1032,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // -------------------------------------------------------------------------
-    // 10. ALARM ALERT MODAL ACTIONS
+    // 11. ALARM ALERT MODAL ACTIONS
     // -------------------------------------------------------------------------
     window.alarmManager.onAlarmTriggered = (note) => {
         elements.alarmModalTitle.textContent = note.title;
@@ -919,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
     elements.btnDismissAlarm.addEventListener('click', () => window.alarmManager.dismiss());
 
     // -------------------------------------------------------------------------
-    // 11. KEYBOARD SHORTCUTS
+    // 12. KEYBOARD SHORTCUTS
     // -------------------------------------------------------------------------
     document.addEventListener('keydown', (e) => {
         // Ctrl+N: New note
@@ -944,6 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (elements.alarmModal.classList.contains('active')) {
                 window.alarmManager.dismiss();
             }
+            elements.modalConfirmDelete.classList.remove('active');
             elements.modalTypingSettings.classList.remove('active');
             elements.modalCustomTheme.classList.remove('active');
         }
@@ -952,10 +1084,17 @@ document.addEventListener('DOMContentLoaded', () => {
     // -------------------------------------------------------------------------
     // INITIAL BOOTSTRAP
     // -------------------------------------------------------------------------
+    window.selectNote = selectNote;
+    window.renderNotesList = renderNotesList;
+
     renderTags();
     const initialNotes = window.notesManager.getAllNotes();
     if (initialNotes.length > 0) {
         selectNote(initialNotes[0].id);
     }
     renderNotesList();
+
+    if (window.cyberPlanner) {
+        window.cyberPlanner.init();
+    }
 });
