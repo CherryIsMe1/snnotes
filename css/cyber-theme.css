@@ -1706,11 +1706,33 @@ html, body {
     border: 1px solid rgba(255, 255, 255, 0.18);
     color: var(--omi-yellow);
     font-family: var(--font-mono);
-    font-size: 12px;
-    padding: 5px 6px;
-    width: 90px;
+    font-size: 13px;
+    padding: 6px 8px;
+    width: 140px;
+    min-width: 135px;
+    flex-shrink: 0;
     outline: none;
     color-scheme: dark;
+    transition: all 0.2s ease;
+}
+
+.agenda-input-time:focus {
+    border-color: var(--omi-yellow);
+    box-shadow: 0 0 10px rgba(252, 238, 10, 0.35);
+}
+
+.agenda-input-time::-webkit-calendar-picker-indicator,
+.alarm-input::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.85;
+    padding: 0;
+    margin-left: 4px;
+    transition: opacity 0.2s ease;
+}
+
+.agenda-input-time::-webkit-calendar-picker-indicator:hover,
+.alarm-input::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
 }
 
 .agenda-input-title {
