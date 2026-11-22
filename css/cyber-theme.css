@@ -799,10 +799,55 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 6px 10px;
+    padding: 7px 10px;
     background: rgba(255, 255, 255, 0.02);
     border: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
     transition: all 0.2s ease;
+}
+
+/* Interactive Markdown Checkboxes in Preview */
+.cyber-checkbox-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 10px;
+    margin: 5px 0;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.cyber-checkbox-item:hover {
+    background: rgba(var(--omi-green-rgb), 0.08);
+    border-color: rgba(var(--omi-green-rgb), 0.35);
+}
+
+.cyber-checkbox-box {
+    width: 16px;
+    height: 16px;
+    border: 2px solid var(--omi-green);
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #000;
+    font-weight: 900;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.cyber-checkbox-item.checked .cyber-checkbox-box {
+    background: var(--omi-green);
+    box-shadow: 0 0 8px var(--omi-green);
+}
+
+.cyber-checkbox-item.checked span {
+    text-decoration: line-through;
+    color: var(--cyber-text-dim);
 }
 
 .checklist-item:hover {

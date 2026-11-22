@@ -224,12 +224,27 @@ class NotesManager {
     }
 
     getChecklistStats(note) {
-        if (!note || !note.checklist || note.checklist.length === 0) {
-            return { total: 0, completed: 0, percentage: 0 };
+        if (!note) return { total: 0, completed: 0, percentage: 0 };
+
+        let total = 0;
+        let completed = 0;
+
+        // Count structured checklist
+        if (note.checklist && Array.isArray(note.checklist)) {
+            total += note.checklist.length;
+            completed += note.checklist.filter(t => t.done).length;
         }
-        const total = note.checklist.length;
-        const completed = note.checklist.filter(t => t.done).length;
-        const percentage = Math.round((completed / total) * 100);
+
+        // Also count markdown checkboxes in note.content (- [ ] and - [x])
+        if (note.content) {
+            const matches = note.content.match(/^-\s*\[([ xX])\]/gm);
+            if (matches) {
+                total += matches.length;
+                completed += matches.filter(m => m.includes('x') || m.includes('X')).length;
+            }
+        }
+
+        const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
         return { total, completed, percentage };
     }
 

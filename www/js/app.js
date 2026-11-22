@@ -446,6 +446,53 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault();
                 applyMarkdownFormat('link');
             }
+        } else if (e.key === 'Enter' && !e.shiftKey && !e.altKey) {
+            const textarea = elements.inputNoteContent;
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            if (start === end) {
+                const text = textarea.value;
+                const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+                const lineEnd = text.indexOf('\n', start);
+                const currentLine = text.substring(lineStart, lineEnd === -1 ? text.length : lineEnd);
+
+                // If current line is an empty task item "- [ ] " or "- [x] "
+                const emptyTaskMatch = currentLine.match(/^(-\s*\[[ xX]?\]\s*)$/);
+                if (emptyTaskMatch) {
+                    e.preventDefault();
+                    textarea.setRangeText('', lineStart, start, 'end');
+                    scheduleAutoSave();
+                    return;
+                }
+
+                // If current line is a task item with text "- [ ] Task"
+                const taskMatch = currentLine.match(/^(-\s*\[[ xX]?\]\s+)/);
+                if (taskMatch) {
+                    e.preventDefault();
+                    textarea.setRangeText('\n- [ ] ', start, start, 'end');
+                    window.soundEngine.playTypingSound();
+                    scheduleAutoSave();
+                    return;
+                }
+
+                // If current line is an empty bullet item "- "
+                if (/^-\s*$/.test(currentLine)) {
+                    e.preventDefault();
+                    textarea.setRangeText('', lineStart, start, 'end');
+                    scheduleAutoSave();
+                    return;
+                }
+
+                // If current line is a bullet item with text "- Item"
+                const bulletMatch = currentLine.match(/^(-\s+)/);
+                if (bulletMatch) {
+                    e.preventDefault();
+                    textarea.setRangeText('\n- ', start, start, 'end');
+                    window.soundEngine.playTypingSound();
+                    scheduleAutoSave();
+                    return;
+                }
+            }
         }
     });
 
@@ -676,6 +723,14 @@ document.addEventListener('DOMContentLoaded', () => {
             alarm
         });
 
+        // Update real-time checklist progress stats
+        const updatedNote = window.notesManager.getNote(currentId);
+        if (updatedNote) {
+            const stats = window.notesManager.getChecklistStats(updatedNote);
+            elements.checklistProgressFill.style.width = `${stats.percentage}%`;
+            elements.checklistProgressText.textContent = `${stats.completed}/${stats.total} (${stats.percentage}%)`;
+        }
+
         elements.saveStatus.textContent = 'SAVED';
         elements.saveStatus.style.color = 'var(--omi-green)';
         updateCharCount();
@@ -710,7 +765,11 @@ document.addEventListener('DOMContentLoaded', () => {
             empty.style.fontFamily = 'var(--font-mono)';
             empty.style.fontSize = '12px';
             empty.style.padding = '8px 0';
-            empty.textContent = 'No tasks added yet. Add one below.';
+            if (stats.total > 0) {
+                empty.textContent = `${stats.total} task(s) active in note text. Click PREVIEW [👁] to check them off, or add new tasks below.`;
+            } else {
+                empty.textContent = 'No tasks added yet. Add one below or type - [ ] in note.';
+            }
             elements.checklistItemsList.appendChild(empty);
             return;
         }
@@ -718,17 +777,13 @@ document.addEventListener('DOMContentLoaded', () => {
         note.checklist.forEach(task => {
             const item = document.createElement('div');
             item.className = `checklist-item ${task.done ? 'done' : ''}`;
+            item.setAttribute('role', 'checkbox');
+            item.setAttribute('aria-checked', task.done ? 'true' : 'false');
+            item.title = 'Click to toggle task';
 
             const checkBtn = document.createElement('div');
             checkBtn.className = 'checklist-checkbox';
             checkBtn.innerHTML = `<svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>`;
-            checkBtn.addEventListener('click', () => {
-                const nowDone = window.notesManager.toggleChecklistItem(note.id, task.id);
-                if (nowDone) window.soundEngine.playCheck();
-                else window.soundEngine.playClick();
-                renderChecklist(note);
-                renderNotesList();
-            });
             item.appendChild(checkBtn);
 
             const textSpan = document.createElement('span');
@@ -744,10 +799,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.stopPropagation();
                 window.soundEngine.playClick();
                 window.notesManager.deleteChecklistItem(note.id, task.id);
-                renderChecklist(note);
+                renderChecklist(window.notesManager.getNote(note.id));
                 renderNotesList();
             });
             item.appendChild(delBtn);
+
+            item.addEventListener('click', (e) => {
+                if (e.target.closest('.checklist-delete-btn')) return;
+                const nowDone = window.notesManager.toggleChecklistItem(note.id, task.id);
+                if (nowDone) window.soundEngine.playCheck();
+                else window.soundEngine.playClick();
+                renderChecklist(window.notesManager.getNote(note.id));
+                renderNotesList();
+            });
 
             elements.checklistItemsList.appendChild(item);
         });
@@ -790,15 +854,25 @@ document.addEventListener('DOMContentLoaded', () => {
         let html = '';
         const lines = text.split('\n');
 
-        lines.forEach(line => {
-            if (line.startsWith('### ')) {
+        lines.forEach((line, lineIndex) => {
+            const taskMatch = line.match(/^-\s*\[([ xX])\]\s*(.*)$/);
+            if (taskMatch) {
+                const isChecked = taskMatch[1].toLowerCase() === 'x';
+                const taskText = taskMatch[2];
+                html += `
+                    <div class="cyber-checkbox-item ${isChecked ? 'checked' : ''}" data-line="${lineIndex}" role="checkbox" aria-checked="${isChecked}" title="Click to toggle task">
+                        <div class="cyber-checkbox-box">${isChecked ? '✓' : ''}</div>
+                        <span>${formatInlineMarkdown(escapeHtml(taskText))}</span>
+                    </div>
+                `;
+            } else if (line.startsWith('### ')) {
                 html += `<h3>${escapeHtml(line.slice(4))}</h3>`;
             } else if (line.startsWith('## ')) {
                 html += `<h2>${escapeHtml(line.slice(3))}</h2>`;
             } else if (line.startsWith('# ')) {
                 html += `<h1>${escapeHtml(line.slice(2))}</h1>`;
             } else if (line.startsWith('- ')) {
-                html += `<li>${escapeHtml(line.slice(2))}</li>`;
+                html += `<li>${formatInlineMarkdown(escapeHtml(line.slice(2)))}</li>`;
             } else if (line.trim() === '') {
                 html += `<br>`;
             } else {
@@ -807,6 +881,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         elements.noteMarkdownPreview.innerHTML = html;
+
+        elements.noteMarkdownPreview.querySelectorAll('.cyber-checkbox-item').forEach(el => {
+            el.addEventListener('click', () => {
+                const lineIdx = parseInt(el.getAttribute('data-line'), 10);
+                toggleMarkdownTask(lineIdx);
+            });
+        });
+    }
+
+    function toggleMarkdownTask(lineIndex) {
+        const lines = elements.inputNoteContent.value.split('\n');
+        if (lineIndex < 0 || lineIndex >= lines.length) return;
+
+        const line = lines[lineIndex];
+        const match = line.match(/^(-\s*\[)([ xX])(\]\s*.*)$/);
+        if (!match) return;
+
+        const isCurrentlyChecked = match[2].toLowerCase() === 'x';
+        const newMark = isCurrentlyChecked ? ' ' : 'x';
+        lines[lineIndex] = `${match[1]}${newMark}${match[3]}`;
+
+        elements.inputNoteContent.value = lines.join('\n');
+        if (!isCurrentlyChecked) window.soundEngine.playCheck();
+        else window.soundEngine.playClick();
+
+        saveCurrentNote();
+        renderMarkdownPreview();
+        const currentId = window.notesManager.selectedNoteId;
+        if (currentId) {
+            renderChecklist(window.notesManager.getNote(currentId));
+            renderNotesList();
+        }
     }
 
     function formatInlineMarkdown(str) {
