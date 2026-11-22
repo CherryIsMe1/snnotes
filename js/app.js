@@ -1015,7 +1015,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         elements.deleteConfirmMessage.textContent = `Are you sure you want to delete "${title}"? This action cannot be undone.`;
         elements.modalConfirmDelete.classList.add('active');
-        window.soundEngine.playBuzzer();
+        window.soundEngine.playClick();
     });
 
     elements.btnCancelDelete.addEventListener('click', () => {
@@ -1029,7 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!currentId) return;
 
         window.notesManager.deleteNote(currentId);
-        window.soundEngine.playBuzzer();
+        window.soundEngine.playClick();
 
         const all = window.notesManager.getFilteredNotes();
         if (all.length > 0) {

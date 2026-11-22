@@ -274,24 +274,9 @@ class CyberSoundSynthesizer {
         } catch (_) {}
     }
 
-    // Error / Buzzer
+    // Neutral subtle click (replaces old harsh buzzer)
     playBuzzer() {
-        if (!this.enabled) return;
-        this.init();
-        try {
-            const now = this.ctx.currentTime;
-            const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(160, now);
-            osc.frequency.setValueAtTime(130, now + 0.1);
-            gain.gain.setValueAtTime(0.12, now);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
-            osc.connect(gain);
-            gain.connect(this.ctx.destination);
-            osc.start(now);
-            osc.stop(now + 0.28);
-        } catch (_) {}
+        this.playClick();
     }
 
     // Alarm synthesis
