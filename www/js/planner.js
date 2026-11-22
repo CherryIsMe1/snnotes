@@ -154,34 +154,29 @@ class CyberPlanner {
     getNotesForDate(dateStr) {
         const allNotes = window.notesManager.getAllNotes();
         const targetDate = new Date(dateStr + 'T00:00:00');
-        const targetDayOfWeek = targetDate.getDay(); // 0 is Sunday
+        const targetDayOfWeek = targetDate.getDay();
 
         return allNotes.filter(note => {
             // Direct scheduledDate match
             if (note.scheduledDate === dateStr) return true;
 
-            // Alarm match
+            // Alarm match (exact date)
             if (note.alarm && note.alarm.enabled && note.alarm.timestamp) {
                 const alarmDateStr = this.toDateStr(note.alarm.timestamp);
                 if (alarmDateStr === dateStr) return true;
 
-                // Handle repeating alarms
+                // Repeating alarm: daily - show on every future day
                 const repeat = note.alarm.repeat;
-                if (repeat === 'daily' && note.alarm.timestamp <= targetDate.getTime() + 86400000) {
+                if (repeat === 'daily' && targetDate.getTime() >= new Date(this.toDateStr(note.alarm.timestamp) + 'T00:00:00').getTime()) {
                     return true;
                 }
+                // Repeating alarm: weekly - show on matching weekday
                 if (repeat === 'weekly') {
                     const alarmDay = new Date(note.alarm.timestamp).getDay();
-                    if (alarmDay === targetDayOfWeek && note.alarm.timestamp <= targetDate.getTime() + 86400000) {
+                    if (alarmDay === targetDayOfWeek && targetDate.getTime() >= new Date(this.toDateStr(note.alarm.timestamp) + 'T00:00:00').getTime()) {
                         return true;
                     }
                 }
-            }
-
-            // Note created on that day
-            const createdDateStr = this.toDateStr(note.createdAt);
-            if (createdDateStr === dateStr && !note.completed) {
-                return true;
             }
 
             return false;
